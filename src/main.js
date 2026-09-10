@@ -3,6 +3,7 @@ import App from './App.vue'
 import router from './router'
 import reveal from './directives/reveal'
 import './styles/main.css'
+import './styles/admin.css'
 
 const app = createApp(App)
 app.directive('reveal', reveal)

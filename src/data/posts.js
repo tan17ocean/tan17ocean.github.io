@@ -222,56 +222,7 @@ export const posts = [
   }
 ]
 
-// 导出派生数据：分类与标签（由文章数据自动计算，页面无需维护）
-export const allCategories = [...new Set(posts.map((p) => p.category))].sort()
-
-export const allTags = [...new Set(posts.flatMap((p) => p.tags))].sort()
-
-// 按日期倒序返回文章列表（不改动原数组）
-export function sortedPosts() {
-  return [...posts].sort((a, b) => (a.date < b.date ? 1 : -1))
-}
-
-// 按分类统计文章数
-export function categoryCounts() {
-  const map = {}
-  posts.forEach((p) => {
-    map[p.category] = (map[p.category] || 0) + 1
-  })
-  return map
-}
-
-// 按标签统计文章数
-export function tagCounts() {
-  const map = {}
-  posts.forEach((p) => {
-    p.tags.forEach((t) => {
-      map[t] = (map[t] || 0) + 1
-    })
-  })
-  return map
-}
-
-// 按「年份 -> 月份 -> 文章」分组，用于归档页
-export function postsByYearMonth() {
-  const groups = sortedPosts().reduce((acc, p) => {
-    const [year, month] = p.date.split('-')
-    acc[year] = acc[year] || {}
-    acc[year][month] = acc[year][month] || []
-    acc[year][month].push(p)
-    return acc
-  }, {})
-  return groups
-}
-
-// 全文搜索：匹配标题 / 摘要 / 正文 / 标签 / 分类（忽略大小写）
-export function searchPosts(keyword) {
-  const kw = (keyword || '').trim().toLowerCase()
-  if (!kw) return []
-  return sortedPosts().filter((p) => {
-    const haystack = [p.title, p.summary, p.category, ...p.tags, ...p.content]
-      .join('\n')
-      .toLowerCase()
-    return haystack.includes(kw)
-  })
-}
+// 说明：本文件只承载「默认文章数据」。
+// 读取与派生函数（sortedPosts / tagCounts / searchPosts 等）统一在
+// src/composables/useContentStore.js 中根据 store.posts 动态计算，
+// 登录管理后台编辑的文章会覆盖本默认数据并持久化到 localStorage。

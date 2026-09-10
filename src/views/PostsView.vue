@@ -2,7 +2,7 @@
 import { ref, computed } from 'vue'
 import BlogLayout from '../components/BlogLayout.vue'
 import PostCard from '../components/PostCard.vue'
-import { sortedPosts, categoryCounts } from '../data/posts'
+import { sortedPosts, categoryCounts } from '../composables/useContentStore'
 
 const counts = categoryCounts()
 const categories = Object.keys(counts).sort()

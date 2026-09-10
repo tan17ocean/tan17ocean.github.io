@@ -1,6 +1,6 @@
 <script setup>
 import BlogLayout from '../components/BlogLayout.vue'
-import { postsByYearMonth } from '../data/posts'
+import { postsByYearMonth } from '../composables/useContentStore'
 
 const groups = postsByYearMonth()
 </script>

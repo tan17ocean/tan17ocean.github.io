@@ -2,12 +2,12 @@
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import BlogLayout from '../components/BlogLayout.vue'
-import { posts, sortedPosts } from '../data/posts'
+import { store, sortedPosts } from '../composables/useContentStore'
 import { formatDateCN, readingTime, parseBlocks } from '../utils/format'
 
 const route = useRoute()
 
-const post = computed(() => posts.find((p) => p.id === route.params.id))
+const post = computed(() => store.posts.find((p) => p.id === route.params.id))
 const blocks = computed(() => (post.value ? parseBlocks(post.value.content) : []))
 const readMins = computed(() => (post.value ? readingTime(post.value.content) : 0))
 

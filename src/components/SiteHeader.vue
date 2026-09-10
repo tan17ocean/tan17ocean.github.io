@@ -1,8 +1,9 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { profile } from '../data/profile'
+import { store } from '../composables/useContentStore'
 import { useTheme } from '../composables/useTheme'
+import { isLoggedIn } from '../utils/auth'
 
 const router = useRouter()
 const route = useRoute()
@@ -10,6 +11,17 @@ const { theme, toggleTheme } = useTheme()
 
 const keyword = ref('')
 const menuOpen = ref(false)
+// 登录后才显示「管理」入口
+const loggedIn = ref(false)
+
+function refreshAuth() {
+  loggedIn.value = isLoggedIn()
+}
+
+onMounted(refreshAuth)
+
+// 路由变化时刷新登录态（登录/退出都会触发导航）
+router.afterEach(refreshAuth)
 
 // 锚点导航（首页区块）；路由项（博客区页面）
 const anchorItems = [
@@ -54,7 +66,7 @@ function closeMenu() {
     <div class="header-inner">
       <router-link to="/" class="brand" @click="closeMenu">
         <span class="brand-dot"></span>
-        <span class="brand-title">{{ profile.name }}</span>
+        <span class="brand-title">{{ store.profile.name }}</span>
       </router-link>
 
       <nav class="site-nav" :class="{ open: menuOpen }">
@@ -77,6 +89,15 @@ function closeMenu() {
             @click="closeMenu"
           >
             {{ item.label }}
+          </router-link>
+          <router-link
+            v-if="loggedIn"
+            to="/admin"
+            class="nav-link admin-entry"
+            :class="{ active: isRouteActive('/admin') }"
+            @click="closeMenu"
+          >
+            管理
           </router-link>
         </div>
         <form class="nav-search" @submit.prevent="onSearch">

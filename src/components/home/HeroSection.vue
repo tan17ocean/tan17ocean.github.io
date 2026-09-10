@@ -1,10 +1,10 @@
 <script setup>
 import { onMounted } from 'vue'
-import { profile } from '../../data/profile'
+import { store } from '../../composables/useContentStore'
 import { useTypewriter } from '../../composables/useTypewriter'
 import { scrollToAnchor } from '../../utils/scroll'
 
-const { text, start } = useTypewriter(profile.heroSubtitles)
+const { text, start } = useTypewriter(store.profile.heroSubtitles)
 
 onMounted(() => {
   start()
@@ -24,7 +24,7 @@ onMounted(() => {
 
     <div class="hero-inner">
       <p class="hero-badge">HELLO, I AM</p>
-      <h1 class="hero-name">{{ profile.name }}</h1>
+      <h1 class="hero-name">{{ store.profile.name }}</h1>
       <p class="hero-type">
         <span class="type-text">{{ text }}</span><span class="type-caret" aria-hidden="true"></span>
       </p>

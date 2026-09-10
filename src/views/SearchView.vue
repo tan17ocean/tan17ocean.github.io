@@ -3,7 +3,7 @@ import { ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import BlogLayout from '../components/BlogLayout.vue'
 import PostCard from '../components/PostCard.vue'
-import { searchPosts, sortedPosts } from '../data/posts'
+import { searchPosts, sortedPosts } from '../composables/useContentStore'
 
 const route = useRoute()
 

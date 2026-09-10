@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted, onBeforeUnmount } from 'vue'
-import { profile } from '../data/profile'
+import { store } from '../composables/useContentStore'
 
 const year = new Date().getFullYear()
 const elapsed = ref('00:00:00')
@@ -29,7 +29,7 @@ onBeforeUnmount(() => {
   <footer class="site-footer">
     <div class="footer-inner">
       <p>
-        &copy; {{ year }} <strong>{{ profile.name }}</strong> · 由
+        &copy; {{ year }} <strong>{{ store.profile.name }}</strong> · 由
         <a href="https://vuejs.org" target="_blank" rel="noopener">Vue 3</a> +
         <a href="https://vitejs.dev" target="_blank" rel="noopener">Vite</a>
         驱动

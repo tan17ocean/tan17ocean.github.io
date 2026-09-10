@@ -1,12 +1,12 @@
 <script setup>
-import { profile } from '../../data/profile'
+import { store } from '../../composables/useContentStore'
 </script>
 
 <template>
   <section id="timeline" class="section">
     <h2 class="section-title">经历 <span class="section-en">Timeline</span></h2>
     <div class="timeline">
-      <div v-for="(item, i) in profile.timeline" :key="i" class="timeline-item" v-reveal="i * 80">
+      <div v-for="(item, i) in store.profile.timeline" :key="i" class="timeline-item" v-reveal="i * 80">
         <span class="timeline-dot" aria-hidden="true"></span>
         <div class="timeline-body card">
           <span class="timeline-date">{{ item.date }}</span>

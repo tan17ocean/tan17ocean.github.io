@@ -1,7 +1,7 @@
 <script setup>
-import { profile } from '../../data/profile'
+import { store } from '../../composables/useContentStore'
 
-const groups = Object.entries(profile.skills)
+const groups = Object.entries(store.profile.skills)
 </script>
 
 <template>

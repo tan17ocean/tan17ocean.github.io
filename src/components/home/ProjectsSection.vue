@@ -1,5 +1,5 @@
 <script setup>
-import { profile } from '../../data/profile'
+import { store } from '../../composables/useContentStore'
 </script>
 
 <template>
@@ -7,7 +7,7 @@ import { profile } from '../../data/profile'
     <h2 class="section-title">项目 <span class="section-en">Projects</span></h2>
     <div class="projects-grid">
       <div
-        v-for="(p, i) in profile.projects"
+        v-for="(p, i) in store.profile.projects"
         :key="p.name"
         class="project-card card"
         v-reveal="i * 80"
