@@ -27,8 +27,19 @@ git clone --depth 1 -b gh-pages "$REPO_URL" "$TMP_DIR"
 
 echo "==> [4/4] 替换构建产物并推送 gh-pages"
 cd "$TMP_DIR"
+# 若线上已存在 content.json（后台「保存并发布」维护的数据），先备份，部署时不覆盖
+HAS_CONTENT=false
+if git cat-file -e HEAD:content.json 2>/dev/null; then
+  HAS_CONTENT=true
+  git show HEAD:content.json > "$OLDPWD/.deploy-keep-content.json"
+fi
 find . -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
 cp -r "$OLDPWD/dist/"* .
+if [ "$HAS_CONTENT" = true ]; then
+  cp "$OLDPWD/.deploy-keep-content.json" content.json
+  rm -f "$OLDPWD/.deploy-keep-content.json"
+  echo "已保留线上 content.json（后台数据不会被重置）"
+fi
 git add -A
 git commit -m "deploy: login + admin dashboard"
 git push origin HEAD:gh-pages

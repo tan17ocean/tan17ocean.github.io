@@ -46,6 +46,9 @@ async function ghFetch(pathname, options = {}) {
   const token = getGhToken()
   const res = await fetch(`${API}${pathname}`, {
     ...options,
+    // GitHub API 响应带缓存头，若不禁用会被浏览器缓存命中，
+    // 导致读取到陈旧的 sha，PUT 时被服务端 409 拒绝（发布失败）。
+    cache: 'no-store',
     headers: {
       Accept: 'application/vnd.github+json',
       'X-GitHub-Api-Version': '2022-11-28',
@@ -92,23 +95,31 @@ export async function publishContent(profile, posts) {
     posts
   }
 
-  const body = {
+  const makeBody = (sha) => ({
     message: `content: 更新站点内容 ${new Date().toISOString().slice(0, 16).replace('T', ' ')}`,
     content: toBase64(JSON.stringify(payload, null, 2)),
-    branch: BRANCH
-  }
-
-  // 线上文件已存在时必须带上 sha，否则 API 拒绝覆盖
-  const sha = await getCurrentSha()
-  if (sha) body.sha = sha
-
-  const res = await ghFetch(`/repos/${REPO}/contents/${PATH}`, {
-    method: 'PUT',
-    body: JSON.stringify(body)
+    branch: BRANCH,
+    ...(sha ? { sha } : {})
   })
 
-  const json = await res.json().catch(() => ({}))
-  if (!res.ok) {
+  // 尝试发布，最多 3 次。
+  // 409 = sha 冲突（线上文件刚被其它发布改动，或读取的 sha 陈旧），
+  // 重新读取最新 sha 后再提交；cache: no-store 已规避浏览器缓存。
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    // 线上文件已存在时必须带上 sha，否则 API 拒绝覆盖
+    const sha = await getCurrentSha()
+    const res = await ghFetch(`/repos/${REPO}/contents/${PATH}`, {
+      method: 'PUT',
+      body: JSON.stringify(makeBody(sha))
+    })
+
+    const json = await res.json().catch(() => ({}))
+    if (res.ok) return json
+
+    if (res.status === 409 && attempt < 3) {
+      continue
+    }
+
     const raw = json.message || `发布失败（HTTP ${res.status}）`
     if (res.status === 401 || (json.message || '').includes('Bad credentials')) {
       throw new Error('GitHub 令牌无效或已过期，请到「发布设置」更新令牌')
@@ -121,7 +132,7 @@ export async function publishContent(profile, posts) {
     }
     throw new Error(raw)
   }
-  return json
+  throw new Error('发布失败：多次提交均与线上内容冲突，请稍后重试')
 }
 
 // 校验令牌是否可用（GET 用户信息），返回 true / false
