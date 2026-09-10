@@ -91,13 +91,12 @@ function closeMenu() {
             {{ item.label }}
           </router-link>
           <router-link
-            v-if="loggedIn"
-            to="/admin"
+            :to="loggedIn ? '/admin' : '/login'"
             class="nav-link admin-entry"
-            :class="{ active: isRouteActive('/admin') }"
+            :class="{ active: isRouteActive('/admin') || isRouteActive('/login') }"
             @click="closeMenu"
           >
-            管理
+            {{ loggedIn ? '管理' : '登录' }}
           </router-link>
         </div>
         <form class="nav-search" @submit.prevent="onSearch">
