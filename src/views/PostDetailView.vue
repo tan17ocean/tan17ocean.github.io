@@ -3,12 +3,12 @@ import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import BlogLayout from '../components/BlogLayout.vue'
 import { store, sortedPosts } from '../composables/useContentStore'
-import { formatDateCN, readingTime, parseBlocks } from '../utils/format'
+import { formatDateCN, readingTime, mdToHtml } from '../utils/format'
 
 const route = useRoute()
 
 const post = computed(() => store.posts.find((p) => p.id === route.params.id))
-const blocks = computed(() => (post.value ? parseBlocks(post.value.content) : []))
+const html = computed(() => (post.value ? mdToHtml(post.value.content) : ''))
 const readMins = computed(() => (post.value ? readingTime(post.value.content) : 0))
 
 const siblings = computed(() => {
@@ -37,16 +37,7 @@ const siblings = computed(() => {
           </div>
         </header>
 
-        <div class="post-content">
-          <template v-for="(block, i) in blocks" :key="i">
-            <h2 v-if="block.type === 'h2'" class="content-h2">{{ block.text }}</h2>
-            <p v-else-if="block.type === 'p'" class="content-p">{{ block.text }}</p>
-            <blockquote v-else-if="block.type === 'quote'" class="content-quote">{{ block.text }}</blockquote>
-            <ul v-else-if="block.type === 'list'" class="content-list">
-              <li v-for="(item, j) in block.items" :key="j">{{ item }}</li>
-            </ul>
-          </template>
-        </div>
+        <div class="post-content markdown-body" v-html="html"></div>
 
         <footer class="post-detail-foot">
           <div class="tag-list">

@@ -531,6 +531,95 @@
   padding-left: 22px;
 }
 
+/* Markdown 预览：补充主样式表未覆盖的元素（详情页样式已全局生效） */
+.admin-preview-body ol {
+  margin: 8px 0;
+  padding-left: 24px;
+}
+
+.admin-preview-body h1,
+.admin-preview-body h3,
+.admin-preview-body h4 {
+  margin: 16px 0 8px;
+}
+
+.admin-preview-body h1 {
+  font-size: 1.25rem;
+}
+
+.admin-preview-body h3 {
+  font-size: 1.05rem;
+}
+
+.admin-preview-body a {
+  color: var(--primary);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.admin-preview-body strong {
+  font-weight: 700;
+}
+
+.admin-preview-body code {
+  font-family: 'JetBrains Mono', Consolas, Monaco, monospace;
+  font-size: 0.88em;
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 0.1em 0.35em;
+  color: var(--primary);
+}
+
+.admin-preview-body pre {
+  margin: 12px 0;
+  padding: 14px 16px;
+  background: var(--code-bg, #14151f);
+  color: #e8eaf6;
+  border-radius: 10px;
+  overflow-x: auto;
+  line-height: 1.65;
+  font-size: 0.9rem;
+}
+
+.admin-preview-body pre code {
+  background: transparent;
+  border: none;
+  padding: 0;
+  color: inherit;
+}
+
+.admin-preview-body table {
+  border-collapse: collapse;
+  margin: 12px 0;
+  width: 100%;
+  font-size: 0.9rem;
+}
+
+.admin-preview-body th,
+.admin-preview-body td {
+  border: 1px solid var(--border);
+  padding: 6px 12px;
+  text-align: left;
+}
+
+.admin-preview-body th {
+  background: var(--bg-soft);
+  font-weight: 600;
+}
+
+.admin-preview-body img {
+  max-width: 100%;
+  border-radius: 10px;
+  margin: 10px 0;
+}
+
+.admin-preview-body hr {
+  border: none;
+  border-top: 2px solid var(--border);
+  margin: 18px 0;
+}
+
 .admin-preview-body p {
   margin: 8px 0;
 }

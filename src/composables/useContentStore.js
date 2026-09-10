@@ -198,7 +198,9 @@ export function searchPosts(keyword) {
   const kw = (keyword || '').trim().toLowerCase()
   if (!kw) return []
   return sortedPosts().filter((p) => {
-    const haystack = [p.title, p.summary, p.category, ...p.tags, ...p.content]
+    // content 可能是 Markdown 字符串（新版）或旧版段落数组
+    const body = Array.isArray(p.content) ? p.content : [p.content || '']
+    const haystack = [p.title, p.summary, p.category, ...p.tags, ...body]
       .join('\n')
       .toLowerCase()
     return haystack.includes(kw)

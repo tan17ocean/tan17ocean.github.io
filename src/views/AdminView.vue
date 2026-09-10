@@ -11,7 +11,7 @@ import {
   loadRemote
 } from '../composables/useContentStore'
 import { clearSession } from '../utils/auth'
-import { parseBlocks } from '../utils/format'
+import { mdToHtml, legacyBlocksToMarkdown } from '../utils/format'
 import {
   publishContent,
   getGhToken,
@@ -194,7 +194,7 @@ function newPost() {
     category: '技术笔记',
     tags: [],
     summary: '',
-    content: []
+    content: ''
   }
   fillForm()
   window.scrollTo({ top: 0, behavior: 'smooth' })
@@ -220,8 +220,8 @@ const form = reactive({
   contentText: ''
 })
 
-// 正文实时预览块
-const contentBlocks = computed(() => parseBlocks(form.contentText.split('\n')))
+// 正文实时预览（Markdown -> HTML）
+const previewHtml = computed(() => mdToHtml(form.contentText))
 
 function fillForm() {
   form.title = editing.value.title
@@ -229,7 +229,10 @@ function fillForm() {
   form.date = editing.value.date
   form.category = editing.value.category
   form.summary = editing.value.summary
-  form.contentText = (editing.value.content || []).join('\n')
+  // 兼容旧版数组正文：回填编辑器时自动转换为 Markdown 字符串
+  form.contentText = Array.isArray(editing.value.content)
+    ? legacyBlocksToMarkdown(editing.value.content)
+    : (editing.value.content || '')
   savedTags.value = (editing.value.tags || []).join(', ')
 }
 
@@ -247,10 +250,8 @@ async function savePost() {
   if (duplicate) return notify('文章 id 重复，请更换（自动生成建议）', 'err')
 
   const tags = savedTags.value.split(/[,，]/).map((t) => t.trim()).filter(Boolean)
-  const content = form.contentText
-    .split('\n')
-    .map((l) => l.trimEnd())
-    .filter((l) => l.trim() !== '')
+  // 正文以 Markdown 字符串保存（保留空行与格式）
+  const content = form.contentText.trim()
 
   const postData = {
     id,
@@ -597,8 +598,8 @@ loadRemote().then(() => {
             <textarea v-model.trim="form.summary" class="admin-textarea" rows="2" placeholder="列表页展示的摘要"></textarea>
           </label>
           <label class="admin-field">
-            <span>正文（每行一段；## 标题 / - 列表 / &gt; 引用）</span>
-            <textarea v-model="form.contentText" class="admin-textarea mono" rows="14" placeholder="## 小标题&#10;普通段落…&#10;- 列表项一&#10;- 列表项二&#10;&gt; 引用内容"></textarea>
+            <span>正文（Markdown 语法：<code>#</code> 标题 / <code>**加粗**</code> / <code>`行内代码`</code> / <code>```代码块```</code> / 列表 / 引用 / 表格 / 链接）</span>
+            <textarea v-model="form.contentText" class="admin-textarea mono" rows="14" placeholder="# 一级标题&#10;## 二级标题&#10;&#10;普通段落，支持 **加粗**、&#96;行内代码&#96; 与 [链接](https://example.com)。&#10;&#10;- 列表项一&#10;- 列表项二&#10;&#10;&gt; 引用内容&#10;&#10;&#96;&#96;&#96;js&#10;console.log(&#39;代码块&#39;)&#10;&#96;&#96;&#96;"></textarea>
           </label>
           <div class="admin-editor-actions">
             <button v-if="isNew" type="button" class="btn btn-primary" :disabled="publishing" @click="savePost">
@@ -614,17 +615,10 @@ loadRemote().then(() => {
           <div class="admin-preview">
             <h4 class="admin-card-sub">正文预览</h4>
             <div class="admin-preview-body">
-              <template v-if="contentBlocks.length">
-                <template v-for="(b, i) in contentBlocks" :key="i">
-                  <h2 v-if="b.type === 'h2'">{{ b.text }}</h2>
-                  <ul v-else-if="b.type === 'list'">
-                    <li v-for="(it, j) in b.items" :key="j">{{ it }}</li>
-                  </ul>
-                  <blockquote v-else-if="b.type === 'quote'">{{ b.text }}</blockquote>
-                  <p v-else>{{ b.text }}</p>
-                </template>
+              <template v-if="form.contentText.trim()">
+                <div class="markdown-body" v-html="previewHtml"></div>
               </template>
-              <p v-else class="admin-empty">预览区：开始输入正文后此处实时渲染。</p>
+              <p v-else class="admin-empty">预览区：开始输入正文后此处实时渲染（支持 Markdown 语法）。</p>
             </div>
           </div>
         </div>
