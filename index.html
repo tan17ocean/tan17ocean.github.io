@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="tan17ocean 的个人主页：技术、阅读与生活。" />
+    <title>tan17ocean · 个人主页</title>
+    <script>
+      // 主题防闪烁：首屏渲染前根据 localStorage / 系统偏好设置初始主题
+      ;(function () {
+        try {
+          var saved = localStorage.getItem('home-theme')
+          var theme = saved
+            ? saved
+            : window.matchMedia('(prefers-color-scheme: dark)').matches
+              ? 'dark'
+              : 'light'
+          document.documentElement.setAttribute('data-theme', theme)
+        } catch (e) {
+          /* ignore */
+        }
+      })()
+    </script>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
