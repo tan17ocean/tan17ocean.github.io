@@ -6,7 +6,7 @@
   "description": "tan17ocean 个人主页（Vue 3 + Vite）：Butterfly 式结构 + JetBrains 风格配色",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build && node scripts/gen-content-json.mjs",
     "preview": "vite preview"
   },
   "dependencies": {

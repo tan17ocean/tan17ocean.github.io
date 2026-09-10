@@ -1,9 +1,25 @@
 <script setup>
 import { ref, reactive, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { store, persistProfile, persistPosts, resetContent, importContent, exportContent } from '../composables/useContentStore'
+import {
+  store,
+  persistProfile,
+  persistPosts,
+  resetContent,
+  importContent,
+  exportContent,
+  loadRemote
+} from '../composables/useContentStore'
 import { clearSession } from '../utils/auth'
 import { parseBlocks } from '../utils/format'
+import {
+  publishContent,
+  getGhToken,
+  setGhToken,
+  clearGhToken,
+  tokenTail,
+  verifyToken
+} from '../utils/githubPublish'
 
 const router = useRouter()
 
@@ -20,6 +36,50 @@ function notify(text, kind = 'ok') {
 }
 function confirmAction(msg) {
   return window.confirm(msg)
+}
+
+// 发布状态：false 可点击；true 表示正在提交
+const publishing = ref(false)
+
+// 保存到本地 + 发布到线上（全站访客可见）
+async function publishAll(silent = false) {
+  if (publishing.value) return false
+  publishing.value = true
+  try {
+    await publishContent(JSON.parse(JSON.stringify(store.profile)), JSON.parse(JSON.stringify(store.posts)))
+    if (!silent) notify('已发布到线上，所有访客约 1-2 分钟内可见')
+    return true
+  } catch (e) {
+    if (!silent) notify(e.message, 'err')
+    else console.warn('[publish]', e)
+    return false
+  } finally {
+    publishing.value = false
+  }
+}
+
+// ---------- 发布设置 ----------
+const tokenInput = ref('')
+const tokenSaved = ref(!!getGhToken())
+
+function saveToken() {
+  const t = tokenInput.value.trim()
+  if (!t) return notify('请输入 GitHub 令牌', 'err')
+  setGhToken(t)
+  tokenInput.value = ''
+  tokenSaved.value = true
+  notify('令牌已保存到本机浏览器')
+}
+function removeToken() {
+  if (!confirmAction('确定清除已保存的 GitHub 令牌吗？之后发布操作需要重新填写。')) return
+  clearGhToken()
+  tokenSaved.value = false
+  notify('令牌已清除')
+}
+async function checkToken() {
+  if (!getGhToken()) return notify('尚未保存令牌', 'err')
+  const ok = await verifyToken()
+  notify(ok ? '令牌有效，可用发布' : '令牌无效或已过期，请重新填写', ok ? 'ok' : 'err')
 }
 
 // ---------- 资料编辑 ----------
@@ -45,7 +105,7 @@ function resetSkillGroupsEdit() {
 }
 resetSkillGroupsEdit()
 
-function saveProfile() {
+async function saveProfile() {
   setSkillGroups(skillGroupsEdit.value)
   // 规整：projects.tags 若是字符串则转数组；heroSubtitles 保持字符串数组
   ;(profileForm.value.projects || []).forEach((p) => {
@@ -55,7 +115,9 @@ function saveProfile() {
   })
   store.profile = JSON.parse(JSON.stringify(profileForm.value))
   persistProfile()
-  notify('资料已保存，全站已实时生效')
+  const ok = await publishAll()
+  if (ok) store.remoteUpdatedAt = new Date().toISOString()
+  if (!ok) notify('资料已保存到本机，但发布失败，请检查「发布设置」后重试', 'err')
 }
 
 // 统计 / 项目 / 时间线 的动态行操作
@@ -138,7 +200,7 @@ function fillForm() {
 
 // 保存文章
 const savedTags = ref('')
-function savePost() {
+async function savePost() {
   const title = form.title.trim()
   if (!title) return notify('请填写文章标题', 'err')
   if (!form.date) return notify('请填写发布日期', 'err')
@@ -167,7 +229,7 @@ function savePost() {
 
   if (isNew.value) {
     store.posts.push(postData)
-    notify('文章已发布')
+    notify('文章已保存')
   } else {
     const idx = store.posts.findIndex((p) => p.id === editing.value.id)
     if (idx >= 0) store.posts.splice(idx, 1, postData)
@@ -175,16 +237,21 @@ function savePost() {
   }
   persistPosts()
   editing.value = null
+  const ok = await publishAll()
+  if (ok) store.remoteUpdatedAt = new Date().toISOString()
+  if (!ok) notify('文章已保存到本机，但发布失败，请检查「发布设置」后重试', 'err')
 }
 
-function deletePost(p) {
+async function deletePost(p) {
   if (!confirmAction(`确定删除文章《${p.title}》吗？此操作不可撤销。`)) return
   const idx = store.posts.findIndex((x) => x.id === p.id)
   if (idx >= 0) {
     store.posts.splice(idx, 1)
     persistPosts()
   }
-  notify('文章已删除', 'err')
+  const ok = await publishAll()
+  if (ok) store.remoteUpdatedAt = new Date().toISOString()
+  notify(ok ? '文章已删除并发布到线上' : '文章已从本机删除，但发布失败，请检查「发布设置」后重试', 'err')
 }
 
 function toggleTagPreview(text) {
@@ -234,6 +301,12 @@ function logout() {
   clearSession()
   router.replace('/')
 }
+
+// 进入后台时同步一次远程最新内容（线上发布过但本机缓存的旧数据会被覆盖）
+loadRemote().then(() => {
+  initProfileForm()
+  resetSkillGroupsEdit()
+})
 </script>
 
 <template>
@@ -279,12 +352,20 @@ function logout() {
         >
           数据工具
         </button>
+        <button
+          type="button"
+          class="admin-tab"
+          :class="{ active: activeTab === 'publish' }"
+          @click="activeTab = 'publish'"
+        >
+          发布设置
+        </button>
       </nav>
 
       <!-- 资料编辑 -->
       <section v-if="activeTab === 'profile'" class="admin-section">
         <h2 class="admin-section-title">个人资料</h2>
-        <p class="admin-section-desc">修改后点击「保存资料」，全站页面立即生效（浏览器本地持久化）。</p>
+        <p class="admin-section-desc">修改后点击「保存并发布」，内容将写入 GitHub 仓库，所有访客约 1-2 分钟内可见。</p>
 
         <div class="admin-grid">
           <div class="admin-card">
@@ -402,8 +483,10 @@ function logout() {
         </div>
 
         <div class="admin-savebar">
-          <button type="button" class="btn btn-primary btn-lg" @click="saveProfile">保存资料</button>
-          <span class="admin-save-hint">保存后全站生效；数据存于当前浏览器 localStorage</span>
+          <button type="button" class="btn btn-primary btn-lg" :disabled="publishing" @click="saveProfile">
+            {{ publishing ? '发布中…' : '保存并发布' }}
+          </button>
+          <span class="admin-save-hint">保存后将写入 GitHub 仓库，全站访客约 1-2 分钟生效</span>
         </div>
       </section>
 
@@ -483,8 +566,12 @@ function logout() {
             <textarea v-model="form.contentText" class="admin-textarea mono" rows="14" placeholder="## 小标题&#10;普通段落…&#10;- 列表项一&#10;- 列表项二&#10;&gt; 引用内容"></textarea>
           </label>
           <div class="admin-editor-actions">
-            <button v-if="isNew" type="button" class="btn btn-primary" @click="savePost">发布文章</button>
-            <button v-else type="button" class="btn btn-primary" @click="savePost">保存修改</button>
+            <button v-if="isNew" type="button" class="btn btn-primary" :disabled="publishing" @click="savePost">
+              {{ publishing ? '发布中…' : '发布文章' }}
+            </button>
+            <button v-else type="button" class="btn btn-primary" :disabled="publishing" @click="savePost">
+              {{ publishing ? '发布中…' : '保存修改' }}
+            </button>
             <button type="button" class="btn btn-ghost" @click="cancelEdit">取消</button>
           </div>
 
@@ -538,10 +625,65 @@ function logout() {
         <div class="admin-card">
           <h3 class="admin-card-title">发布说明</h3>
           <p class="admin-card-text">
-            本站为 GitHub Pages 静态站：本后台的编辑保存在<b>当前浏览器 localStorage</b>，仅登录的这台设备可见；
-            要让<b>所有访客</b>看到新内容，请在「导出数据」后，将导出的 JSON 内容同步到
-            <code>src/data/profile.js</code> 与 <code>src/data/posts.js</code>，然后执行
-            <code>npm run build</code> 并推送部署（详见仓库 README）。
+            本站为 GitHub Pages 静态站：后台「保存并发布」会把内容直接写入仓库的
+            <code>content.json</code> 并自动部署，<b>所有访客约 1-2 分钟内可见</b>；
+            访客页面每分钟自动检查更新。发布依赖 GitHub 令牌，请到「发布设置」中配置。
+          </p>
+        </div>
+      </section>
+
+      <!-- 发布设置 -->
+      <section v-if="activeTab === 'publish'" class="admin-section">
+        <h2 class="admin-section-title">发布设置</h2>
+        <p class="admin-section-desc">配置 GitHub 令牌后，「保存并发布」会把内容写入仓库，所有访客都能看到。</p>
+
+        <div class="admin-grid two">
+          <div class="admin-card">
+            <h3 class="admin-card-title">GitHub 令牌</h3>
+            <p class="admin-card-text">
+              后台发布需要 GitHub 令牌（<b>repo 内容读写权限</b>：fine-grained token 勾选 Contents: Read and write）。
+              令牌仅保存在<b>本机浏览器</b>，不进入站点代码、日志或交付文件。
+            </p>
+            <label class="admin-field">
+              <span>当前状态：{{ tokenSaved ? `已保存（${tokenTail()}）` : '未配置' }}</span>
+              <input
+                v-model.trim="tokenInput"
+                type="password"
+                class="admin-input"
+                placeholder="粘贴 GitHub 令牌（ghp_… 或 github_pat_…）"
+                autocomplete="off"
+              />
+            </label>
+            <div class="admin-row">
+              <button type="button" class="btn btn-primary" @click="saveToken">保存令牌</button>
+              <button v-if="tokenSaved" type="button" class="btn btn-ghost" @click="checkToken">校验</button>
+              <button v-if="tokenSaved" type="button" class="btn danger-btn" @click="removeToken">清除</button>
+            </div>
+            <p class="admin-card-text">
+              获取方式：GitHub → Settings → Developer settings → Fine-grained personal access tokens →
+              新建 → 仓库选择 <code>tan17ocean/tan17ocean.github.io</code> → 权限勾选
+              <code>Contents: Read and write</code> → 生成后粘贴到此处。
+            </p>
+          </div>
+
+          <div class="admin-card">
+            <h3 class="admin-card-title">立即发布当前内容</h3>
+            <p class="admin-card-text">
+              把本机当前全部内容（资料 + 文章）立即推送到线上。适合首次配置令牌后，
+              或本地保存成功但线上未更新的情况下手动触发。
+            </p>
+            <button type="button" class="btn btn-primary" :disabled="publishing" @click="publishAll()">
+              {{ publishing ? '发布中…' : '立即发布到线上' }}
+            </button>
+          </div>
+        </div>
+
+        <div class="admin-card">
+          <h3 class="admin-card-title">发布原理与生效时间</h3>
+          <p class="admin-card-text">
+            每次点击「保存并发布」：内容写入仓库 gh-pages 分支的 <code>content.json</code>（带更新时间，GitHub 自动提交），
+            GitHub Pages 检测到分支更新后自动重新部署，约 1-2 分钟后<b>全站访客</b>拉取到新内容；
+            访客停留在页面时也会每分钟自动检查更新并即时刷新，无需手动刷新。
           </p>
         </div>
       </section>
