@@ -18,7 +18,8 @@ import {
   setGhToken,
   clearGhToken,
   tokenTail,
-  verifyToken
+  verifyToken,
+  diagnosePublish
 } from '../utils/githubPublish'
 
 const router = useRouter()
@@ -47,14 +48,48 @@ async function publishAll(silent = false) {
   publishing.value = true
   try {
     await publishContent(JSON.parse(JSON.stringify(store.profile)), JSON.parse(JSON.stringify(store.posts)))
+    recordPubResult(true, '')
+    if (lastDiag.value) lastDiag.value = null
     if (!silent) notify('已发布到线上，所有访客约 1-2 分钟内可见')
     return true
   } catch (e) {
+    recordPubResult(false, e.message)
     if (!silent) notify(e.message, 'err')
     else console.warn('[publish]', e)
     return false
   } finally {
     publishing.value = false
+  }
+}
+
+// ---------- 发布结果与诊断 ----------
+const PUBS_KEY = 'tan-home-last-pub'
+const lastPub = ref(null)
+const lastDiag = ref(null)
+const diagnosing = ref(false)
+function recordPubResult(ok, err) {
+  const item = { ok, err: err || '', time: new Date().toLocaleTimeString('zh-CN', { hour12: false }) }
+  lastPub.value = item
+  try {
+    localStorage.setItem(PUBS_KEY, JSON.stringify(item))
+  } catch {
+    /* ignore */
+  }
+}
+try {
+  const raw = localStorage.getItem(PUBS_KEY)
+  if (raw) lastPub.value = JSON.parse(raw)
+} catch {
+  /* ignore */
+}
+async function runDiag() {
+  diagnosing.value = true
+  try {
+    lastDiag.value = await diagnosePublish()
+  } catch (e) {
+    lastDiag.value = [{ name: '诊断执行失败', ok: false, detail: String(e.message || e) }]
+  } finally {
+    diagnosing.value = false
   }
 }
 
@@ -675,6 +710,40 @@ loadRemote().then(() => {
             <button type="button" class="btn btn-primary" :disabled="publishing" @click="publishAll()">
               {{ publishing ? '发布中…' : '立即发布到线上' }}
             </button>
+          </div>
+        </div>
+
+        <div class="admin-grid two">
+          <div class="admin-card">
+            <h3 class="admin-card-title">最近发布结果</h3>
+            <p v-if="!lastPub" class="admin-card-text">尚未发布过。完成一次「保存并发布」后，这里会显示结果。</p>
+            <template v-else>
+              <p class="admin-card-text" :class="lastPub.ok ? 'pub-ok' : 'pub-err'">
+                {{ lastPub.time }} {{ lastPub.ok ? '发布成功，全站访客约 1-2 分钟内可见' : '发布失败' }}
+              </p>
+              <p v-if="!lastPub.ok && lastPub.err" class="admin-card-text pub-err detail">
+                失败原因：{{ lastPub.err }}
+              </p>
+              <p class="admin-card-text">本记录保存在本机浏览器，仅用于问题排查。</p>
+            </template>
+          </div>
+
+          <div class="admin-card">
+            <h3 class="admin-card-title">一键诊断</h3>
+            <p class="admin-card-text">
+              逐项检查「网络可达、令牌有效、线上版本读取」等 publish 链路环节，
+              快速定位发布失败的原因。
+            </p>
+            <button type="button" class="btn btn-ghost" :disabled="diagnosing" @click="runDiag">
+              {{ diagnosing ? '诊断中…' : '开始诊断' }}
+            </button>
+            <div v-if="lastDiag" class="diag-list">
+              <div v-for="(d, i) in lastDiag" :key="i" class="diag-item">
+                <span class="diag-dot" :class="d.ok ? 'ok' : 'err'"></span>
+                <span class="diag-name">{{ d.name }}</span>
+                <span class="diag-detail">{{ d.detail }}</span>
+              </div>
+            </div>
           </div>
         </div>
 

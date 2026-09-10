@@ -583,6 +583,57 @@
   color: #fff;
 }
 
+/* 发布结果与一键诊断 */
+.pub-ok {
+  color: #178a5b;
+  font-weight: 600;
+}
+.pub-err {
+  color: #c93a3f;
+  font-weight: 600;
+}
+.pub-err.detail {
+  font-weight: 500;
+  word-break: break-all;
+  background: rgba(229, 72, 77, 0.08);
+  padding: 8px 10px;
+  border-radius: 8px;
+}
+.diag-list {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.diag-item {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 0.9rem;
+  flex-wrap: wrap;
+}
+.diag-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex: none;
+  align-self: center;
+}
+.diag-dot.ok {
+  background: #178a5b;
+}
+.diag-dot.err {
+  background: #e5484d;
+}
+.diag-name {
+  font-weight: 600;
+  white-space: nowrap;
+}
+.diag-detail {
+  color: var(--text-muted);
+  word-break: break-all;
+}
+
 .toast-enter-active,
 .toast-leave-active {
   transition: opacity 0.25s ease, transform 0.25s ease;

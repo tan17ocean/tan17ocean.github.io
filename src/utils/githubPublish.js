@@ -60,7 +60,7 @@ async function ghFetch(pathname, options = {}) {
 }
 
 // 读取线上 content.json 的当前 sha（不存在返回 null）
-async function getCurrentSha() {
+export async function getCurrentSha() {
   const res = await ghFetch(`/repos/${REPO}/contents/${PATH}?ref=${BRANCH}`)
   if (res.status === 404) return null
   if (!res.ok) throw new Error(`读取线上内容失败（HTTP ${res.status}）`)
@@ -141,4 +141,82 @@ export async function verifyToken() {
   if (!token) return false
   const res = await ghFetch('/user')
   return res.ok
+}
+
+/**
+ * 发布链路诊断：逐项检查并返回可读结果列表。
+ * 用于后台「发布设置 -> 一键诊断」，快速定位失败环节。
+ */
+export async function diagnosePublish() {
+  const out = []
+  const token = getGhToken()
+  out.push({
+    name: '令牌配置',
+    ok: !!token,
+    detail: token ? `已保存（${tokenTail()}）` : '未配置，请在发布设置中填写令牌'
+  })
+  if (!token) return out
+
+  // 1) 网络可达性：从浏览器请求 api.github.com（无令牌的轻量端点）
+  try {
+    const ctl = new AbortController()
+    const timer = setTimeout(() => ctl.abort(), 15000)
+    const res = await fetch(`${API}/zen`, { cache: 'no-store', signal: ctl.signal })
+    clearTimeout(timer)
+    out.push({ name: '网络可达', ok: true, detail: `api.github.com 响应 HTTP ${res.status}` })
+  } catch (e) {
+    out.push({
+      name: '网络可达',
+      ok: false,
+      detail: `无法连接 api.github.com：${String(e.message || e).slice(0, 120)}（浏览器需能直连 GitHub API，或走代理）`
+    })
+    return out
+  }
+
+  // 2) 令牌有效性
+  try {
+    const res = await ghFetch('/user')
+    const j = await res.json().catch(() => ({}))
+    out.push({
+      name: '令牌有效',
+      ok: res.ok,
+      detail: res.ok ? `账号 ${j.login}（HTTP ${res.status}）` : `HTTP ${res.status}：${j.message || ''}`
+    })
+  } catch (e) {
+    out.push({ name: '令牌有效', ok: false, detail: String(e.message || e).slice(0, 120) })
+    return out
+  }
+
+  // 3) 读取线上 sha
+  try {
+    const sha = await getCurrentSha()
+    out.push({
+      name: '线上版本读取',
+      ok: true,
+      detail: sha ? `已取得 sha ${sha.slice(0, 7)}` : '线上 content.json 尚不存在（首次发布将新建）'
+    })
+  } catch (e) {
+    out.push({ name: '线上版本读取', ok: false, detail: String(e.message || e).slice(0, 120) })
+    return out
+  }
+
+  // 4) 内容冲突检测（只读：对比本地与线上 updatedAt）
+  try {
+    const res = await ghFetch(`/repos/${REPO}/contents/${PATH}?ref=${BRANCH}`)
+    if (res.ok) {
+      const j = await res.json()
+      const remote = JSON.parse(decodeURIComponent(escape(atob(j.content))))
+      out.push({
+        name: '线上内容',
+        ok: true,
+        detail: `版本 ${remote.updatedAt}，文章 ${remote.posts.length} 篇`
+      })
+    } else {
+      out.push({ name: '线上内容', ok: true, detail: '尚不存在或无法读取' })
+    }
+  } catch (e) {
+    out.push({ name: '线上内容', ok: false, detail: String(e.message || e).slice(0, 120) })
+  }
+
+  return out
 }
