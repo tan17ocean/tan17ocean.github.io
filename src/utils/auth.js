@@ -10,7 +10,7 @@
 // 允许登录的账号
 export const ADMIN_ACCOUNT = '1515618169@qq.com'
 
-// 密码 tjw20040709tjw 的 SHA-256 哈希（非明文）
+
 const PASSWORD_HASH = '97564960bc9ad0f8ccca43c592793f8880f00f1b6039b69b5215a22671ec55ec'
 
 // 会话 Key（sessionStorage：关闭标签页/浏览器后失效）
