@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-11T02:12:45.628Z",
+  "updatedAt": "2026-09-11T02:15:04.963Z",
   "profile": {
     "name": "tan17ocean",
     "heroSubtitles": [
@@ -24,7 +24,7 @@
         "label": "篇文章"
       },
       {
-        "value": "4",
+        "value": "3",
         "label": "个项目"
       }
     ],
@@ -56,33 +56,23 @@
           "Vue 3",
           "Vite"
         ],
-        "link": "www.bilibili.com"
+        "link": "tan17ocean.github.io/"
       },
       {
-        "name": "数据大屏看板",
-        "desc": "将业务指标实时可视化的管理看板，支持多数据源接入与自定义布局。",
+        "name": "基于YOLO的手势识别系统",
+        "desc": "这是一个基于YOLO（You Only Look Once）深度学习框架的实时手势识别系统，能够通过摄像头实时识别0-9数字手势，并提供可视化反馈。该系统采用分类方法，支持10种不同的手势类别识别。",
         "tags": [
-          "ECharts",
-          "Vue"
+          "Python"
         ],
-        "link": ""
+        "link": "https://gitee.com/tan17ocean/yolo_gesture"
       },
       {
-        "name": "自动化部署脚本",
-        "desc": "一键构建、测试与发布的 CI 脚本集，覆盖多环境配置与回滚预案。",
+        "name": "俄罗斯方块微信小程序",
+        "desc": "一个基于微信小程序开发的经典俄罗斯方块游戏。",
         "tags": [
-          "Shell",
-          "CI/CD"
+          "JSON"
         ],
-        "link": ""
-      },
-      {
-        "name": "效率小工具集",
-        "desc": "日常开发中沉淀的命令行小工具：批量改名、日志扫描、编码探测等。",
-        "tags": [
-          "Node.js"
-        ],
-        "link": ""
+        "link": "https://gitee.com/tan17ocean/tetris-wechat-mini-program"
       }
     ],
     "timeline": [
