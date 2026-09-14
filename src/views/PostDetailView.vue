@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref, watch, onMounted, provide } from 'vue'
+import { computed, ref, watch, onMounted, onUnmounted, provide } from 'vue'
 import { useRoute } from 'vue-router'
 import BlogLayout from '../components/BlogLayout.vue'
 import PostToc from '../components/PostToc.vue'
@@ -14,6 +14,15 @@ const toc = computed(() => (post.value ? extractToc(post.value.content) : []))
 provide('postToc', toc)
 const readMins = computed(() => (post.value ? readingTime(post.value.content) : 0))
 const contentEl = ref(null)
+
+// ---------- 阅读进度条 ----------
+const progress = ref(0)
+
+function updateProgress() {
+  const scrollTop = window.scrollY || document.documentElement.scrollTop
+  const docHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight
+  progress.value = docHeight > 0 ? Math.min(100, Math.max(0, (scrollTop / docHeight) * 100)) : 0
+}
 
 // ---------- 代码块复制按钮 ----------
 function initCodeCopy() {
@@ -54,7 +63,12 @@ watch(html, () => {
 })
 
 onMounted(() => {
+  window.addEventListener('scroll', updateProgress, { passive: true })
   requestAnimationFrame(initCodeCopy)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('scroll', updateProgress)
 })
 
 const siblings = computed(() => {
@@ -68,6 +82,8 @@ const siblings = computed(() => {
 <template>
   <BlogLayout>
     <template v-if="post">
+      <!-- 阅读进度条 -->
+      <div class="reading-progress-bar" :style="{ width: progress + '%' }"></div>
       <article class="post-detail">
         <header class="post-detail-head">
           <router-link to="/posts" class="back-link">&larr; 返回博客列表</router-link>

@@ -15,7 +15,7 @@ const routes = [
     component: () => import('../views/AdminView.vue'),
     meta: { requiresAuth: true }
   },
-  { path: '/:pathMatch(.*)*', redirect: '/' }
+  { path: '/:pathMatch(.*)*', component: () => import('../views/NotFoundView.vue') }
 ]
 
 const router = createRouter({

@@ -11,6 +11,8 @@ cd "$(dirname "$0")"
 export LANG=C.UTF-8
 export http_proxy=http://127.0.0.1:7897
 export https_proxy=http://127.0.0.1:7897
+export HTTP_PROXY=http://127.0.0.1:7897
+export HTTPS_PROXY=http://127.0.0.1:7897
 
 REPO_URL="https://github.com/tan17ocean/tan17ocean.github.io.git"
 TMP_DIR="/tmp/gh-pages-deploy"

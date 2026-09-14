@@ -1516,6 +1516,18 @@ input {
   color: var(--text-muted);
 }
 
+/* ---------- 阅读进度条 ---------- */
+.reading-progress-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--primary), var(--primary-2));
+  z-index: 9999;
+  transition: width 0.15s ease-out;
+  box-shadow: 0 0 8px rgba(142, 123, 239, 0.4);
+}
+
 /* ---------- 页脚 ---------- */
 .site-footer {
   border-top: 1px solid var(--border);
