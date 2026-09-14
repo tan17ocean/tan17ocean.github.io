@@ -79,14 +79,17 @@ function toBase64(str) {
 }
 
 /**
- * 发布内容：将 profile + posts 写入 gh-pages 分支的 content.json。
+ * 发布内容：将 profile + 已发布文章（过滤草稿）写入 gh-pages 分支的 content.json。
  * 成功返回 GitHub API 返回的对象；失败抛出带可读信息的 Error。
  */
-export async function publishContent(profile, posts) {
+export async function publishContent(profile, allPosts) {
   const token = getGhToken()
   if (!token) {
     throw new Error('尚未配置 GitHub 令牌，请先在「发布设置」中填写')
   }
+
+  // 只发布已发布文章（草稿不推送到线上）
+  const posts = (allPosts || []).filter((p) => p.published !== false)
 
   const payload = {
     version: 1,

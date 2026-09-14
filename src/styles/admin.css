@@ -482,6 +482,81 @@
   box-shadow: var(--shadow-sm);
 }
 
+/* 文章状态筛选 */
+.admin-post-filter {
+  display: flex;
+  gap: 8px;
+  padding: 14px 16px 4px;
+}
+
+.admin-filter-btn {
+  background: none;
+  border: 1.5px solid var(--border);
+  color: var(--text-secondary);
+  border-radius: 999px;
+  padding: 4px 16px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+}
+
+.admin-filter-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.admin-filter-btn.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+
+/* 发布状态徽标（列表内可点击切换） */
+.col-status {
+  white-space: nowrap;
+  width: 90px;
+}
+
+.admin-status-badge {
+  border: none;
+  border-radius: 999px;
+  padding: 3px 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+.admin-status-badge.live {
+  background: rgba(46, 160, 67, 0.14);
+  color: #2ea043;
+}
+
+.admin-status-badge.draft {
+  background: rgba(219, 154, 4, 0.14);
+  color: #b8860b;
+}
+
+.admin-status-badge:hover {
+  opacity: 0.75;
+}
+
+/* 编辑器内发布状态切换 */
+.admin-publish-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding-top: 4px;
+}
+
+.admin-publish-toggle .admin-filter-btn {
+  padding: 5px 20px;
+}
+
+/* 博客管理表格 */
+
 .admin-post-table {
   width: 100%;
   border-collapse: collapse;

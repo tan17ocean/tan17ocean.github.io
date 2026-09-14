@@ -208,11 +208,37 @@ function removeSkillGroup(index) {
 }
 
 // ---------- 博客管理 ----------
-const postList = computed(() =>
-  [...store.posts].sort((a, b) => (a.date < b.date ? 1 : -1))
-)
+const postFilter = ref('all') // 'all' | 'published' | 'draft'
+const publishedCount = computed(() => store.posts.filter((p) => p.published !== false).length)
+const draftCount = computed(() => store.posts.filter((p) => p.published === false).length)
+const postList = computed(() => {
+  let list = [...store.posts].sort((a, b) => (a.date < b.date ? 1 : -1))
+  if (postFilter.value === 'published') {
+    list = list.filter((p) => p.published !== false)
+  } else if (postFilter.value === 'draft') {
+    list = list.filter((p) => p.published === false)
+  }
+  return list
+})
 const editing = ref(null)
 const isNew = ref(false)
+
+async function togglePostPublished(p) {
+  const idx = store.posts.findIndex((x) => x.id === p.id)
+  if (idx < 0) return
+  const newVal = !p.published
+  store.posts[idx].published = newVal
+  persistPosts()
+  syncPostCount() // 自动同步文章数量
+  notify(newVal ? '已设为已发布，正在同步线上…' : '已设为草稿，正在从线上移除…')
+  const ok = await publishAll()
+  if (ok) {
+    store.remoteUpdatedAt = new Date().toISOString()
+    notify(newVal ? '已发布到线上' : '已从线上移除，仅保留为本机草稿')
+  } else {
+    notify('本机状态已更新，但发布失败，请检查「发布设置」后重试', 'err')
+  }
+}
 
 function slugify(text) {
   return (text || '')
@@ -232,7 +258,8 @@ function newPost() {
     category: '技术笔记',
     tags: [],
     summary: '',
-    content: ''
+    content: '',
+    published: true // 新建默认已发布
   }
   fillForm()
   window.scrollTo({ top: 0, behavior: 'smooth' })
@@ -255,7 +282,8 @@ const form = reactive({
   date: '',
   category: '',
   summary: '',
-  contentText: ''
+  contentText: '',
+  published: true
 })
 
 // 正文实时预览（Markdown -> HTML）
@@ -267,11 +295,12 @@ function fillForm() {
   form.date = editing.value.date
   form.category = editing.value.category
   form.summary = editing.value.summary
-  // 兼容旧版数组正文：回填编辑器时自动转换为 Markdown 字符串
+// 兼容旧版数组正文：回填编辑器时自动转换为 Markdown 字符串
   form.contentText = Array.isArray(editing.value.content)
     ? legacyBlocksToMarkdown(editing.value.content)
     : (editing.value.content || '')
   savedTags.value = (editing.value.tags || []).join(', ')
+  form.published = editing.value.published !== false // 旧数据视为已发布
 }
 
 // 保存文章
@@ -291,30 +320,33 @@ async function savePost() {
   // 正文以 Markdown 字符串保存（保留空行与格式）
   const content = form.contentText.trim()
 
-  const postData = {
+const postData = {
     id,
     title,
     date: form.date,
     category: form.category.trim(),
     tags,
     summary: form.summary.trim(),
-    content
+    content,
+    published: form.published
   }
 
-  if (isNew.value) {
+if (isNew.value) {
     store.posts.push(postData)
-    notify('文章已保存')
+    notify(form.published ? '文章已发布' : '已保存为草稿')
   } else {
     const idx = store.posts.findIndex((p) => p.id === editing.value.id)
     if (idx >= 0) store.posts.splice(idx, 1, postData)
-    notify('文章已更新')
+    notify(form.published ? '文章已更新' : '已保存为草稿')
   }
   persistPosts()
   syncPostCount() // 自动同步文章数量
   editing.value = null
-  const ok = await publishAll()
-  if (ok) store.remoteUpdatedAt = new Date().toISOString()
-  if (!ok) notify('文章已保存到本机，但发布失败，请检查「发布设置」后重试', 'err')
+  if (form.published) {
+    const ok = await publishAll()
+    if (ok) store.remoteUpdatedAt = new Date().toISOString()
+    if (!ok) notify('文章已保存到本机，但发布失败，请检查「发布设置」后重试', 'err')
+  }
 }
 
 async function deletePost(p) {
@@ -570,18 +602,40 @@ loadRemote().then(() => {
         </div>
       </section>
 
-      <!-- 博客管理 -->
+<!-- 博客管理 -->
       <section v-if="activeTab === 'posts'" class="admin-section">
         <div class="admin-section-head">
           <div>
             <h2 class="admin-section-title">博客管理</h2>
-            <p class="admin-section-desc">共 {{ store.posts.length }} 篇文章，可新建、编辑或删除。</p>
+            <p class="admin-section-desc">
+              共 {{ store.posts.length }} 篇（已发布 {{ publishedCount }} / 草稿 {{ draftCount }}），可新建、编辑或删除。
+            </p>
           </div>
           <button type="button" class="btn btn-primary" @click="newPost">+ 新建文章</button>
         </div>
 
         <!-- 文章列表 -->
         <div v-if="!editing" class="admin-post-table-wrap">
+          <div class="admin-post-filter">
+            <button
+              type="button"
+              class="admin-filter-btn"
+              :class="{ active: postFilter === 'all' }"
+              @click="postFilter = 'all'"
+            >全部</button>
+            <button
+              type="button"
+              class="admin-filter-btn"
+              :class="{ active: postFilter === 'published' }"
+              @click="postFilter = 'published'"
+            >已发布</button>
+            <button
+              type="button"
+              class="admin-filter-btn"
+              :class="{ active: postFilter === 'draft' }"
+              @click="postFilter = 'draft'"
+            >草稿</button>
+          </div>
           <table class="admin-post-table">
             <thead>
               <tr>
@@ -589,6 +643,7 @@ loadRemote().then(() => {
                 <th>分类</th>
                 <th>日期</th>
                 <th>标签</th>
+                <th class="col-status">状态</th>
                 <th class="col-ops">操作</th>
               </tr>
             </thead>
@@ -600,13 +655,22 @@ loadRemote().then(() => {
                 <td>{{ p.category }}</td>
                 <td>{{ p.date }}</td>
                 <td class="admin-tag-cell">{{ (p.tags || []).join(' / ') }}</td>
+                <td class="col-status">
+                  <button
+                    type="button"
+                    class="admin-status-badge"
+                    :class="p.published === false ? 'draft' : 'live'"
+                    :title="p.published === false ? '点击设为已发布' : '点击设为草稿'"
+                    @click="togglePostPublished(p)"
+                  >{{ p.published === false ? '草稿' : '已发布' }}</button>
+                </td>
                 <td class="col-ops">
                   <button type="button" class="admin-mini-btn" @click="editPost(p)">编辑</button>
                   <button type="button" class="admin-mini-btn danger" @click="deletePost(p)">删除</button>
                 </td>
               </tr>
               <tr v-if="!postList.length">
-                <td colspan="5" class="admin-empty">还没有文章，点击右上角「新建文章」开始写作。</td>
+                <td colspan="6" class="admin-empty">没有符合条件的文章，点击右上角「新建文章」开始写作。</td>
               </tr>
             </tbody>
           </table>
@@ -636,6 +700,25 @@ loadRemote().then(() => {
               <span>标签（逗号分隔）</span>
               <input v-model="savedTags" class="admin-input" placeholder="如 Vue, Vite, 前端" @input="toggleTagPreview($event.target.value)" />
             </label>
+            <label class="admin-field">
+              <span>发布状态</span>
+              <div class="admin-publish-toggle">
+                <button
+                  type="button"
+                  class="admin-filter-btn"
+                  :class="{ active: form.published !== false }"
+                  @click="form.published = true"
+                >已发布</button>
+                <button
+                  type="button"
+                  class="admin-filter-btn"
+                  :class="{ active: form.published === false }"
+                  @click="form.published = false"
+                >草稿</button>
+                <span class="admin-save-hint" v-if="form.published === false">草稿仅保存在本机，不会出现在前台与线上。</span>
+                <span class="admin-save-hint" v-else>保存后将同步发布到前台与线上。</span>
+              </div>
+            </label>
           </div>
           <label class="admin-field">
             <span>摘要</span>
@@ -645,12 +728,9 @@ loadRemote().then(() => {
             <span>正文（Markdown 语法：<code>#</code> 标题 / <code>**加粗**</code> / <code>`行内代码`</code> / <code>```代码块```</code> / 列表 / 引用 / 表格 / 链接）</span>
             <textarea v-model="form.contentText" class="admin-textarea mono" rows="14" placeholder="# 一级标题&#10;## 二级标题&#10;&#10;普通段落，支持 **加粗**、&#96;行内代码&#96; 与 [链接](https://example.com)。&#10;&#10;- 列表项一&#10;- 列表项二&#10;&#10;&gt; 引用内容&#10;&#10;&#96;&#96;&#96;js&#10;console.log(&#39;代码块&#39;)&#10;&#96;&#96;&#96;"></textarea>
           </label>
-          <div class="admin-editor-actions">
-            <button v-if="isNew" type="button" class="btn btn-primary" :disabled="publishing" @click="savePost">
-              {{ publishing ? '发布中…' : '发布文章' }}
-            </button>
-            <button v-else type="button" class="btn btn-primary" :disabled="publishing" @click="savePost">
-              {{ publishing ? '发布中…' : '保存修改' }}
+<div class="admin-editor-actions">
+            <button type="button" class="btn btn-primary" :disabled="publishing" @click="savePost">
+              {{ publishing ? '处理中…' : (form.published === false ? (isNew ? '保存草稿' : '保存为草稿') : (isNew ? '发布文章' : '保存并发布')) }}
             </button>
             <button type="button" class="btn btn-ghost" @click="cancelEdit">取消</button>
           </div>

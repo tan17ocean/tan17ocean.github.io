@@ -41,6 +41,16 @@ export const store = reactive({
   remoteReady: false
 })
 
+// 已发布文章（前台只展示这些）
+function publishedPosts() {
+  return store.posts.filter((p) => p.published !== false)
+}
+
+// 草稿文章（仅后台可见）
+function draftPosts() {
+  return store.posts.filter((p) => p.published === false)
+}
+
 // ---------- 本地持久化（作为离线缓存） ----------
 
 export function persistProfile() {
@@ -150,30 +160,30 @@ export function stopPolling() {
   }
 }
 
-// ---------- 派生数据（基于 store.posts 动态计算） ----------
+// ---------- 派生数据（基于已发布文章动态计算，前台专用） ----------
 
-export const allCategories = [...new Set(store.posts.map((p) => p.category))].sort()
+export const allCategories = [...new Set(publishedPosts().map((p) => p.category))].sort()
 
-export const allTags = [...new Set(store.posts.flatMap((p) => p.tags))].sort()
+export const allTags = [...new Set(publishedPosts().flatMap((p) => p.tags))].sort()
 
-// 按日期倒序返回文章列表（不改动原数组）
+// 按日期倒序返回已发布文章列表（前台专用）
 export function sortedPosts() {
-  return [...store.posts].sort((a, b) => (a.date < b.date ? 1 : -1))
+  return [...publishedPosts()].sort((a, b) => (a.date < b.date ? 1 : -1))
 }
 
-// 按分类统计文章数
+// 按分类统计已发布文章数
 export function categoryCounts() {
   const map = {}
-  store.posts.forEach((p) => {
+  publishedPosts().forEach((p) => {
     map[p.category] = (map[p.category] || 0) + 1
   })
   return map
 }
 
-// 按标签统计文章数
+// 按标签统计已发布文章数
 export function tagCounts() {
   const map = {}
-  store.posts.forEach((p) => {
+  publishedPosts().forEach((p) => {
     p.tags.forEach((t) => {
       map[t] = (map[t] || 0) + 1
     })
@@ -181,7 +191,7 @@ export function tagCounts() {
   return map
 }
 
-// 按「年份 -> 月份 -> 文章」分组，用于归档页
+// 按「年份 -> 月份 -> 文章」分组，用于归档页（只含已发布）
 export function postsByYearMonth() {
   const groups = sortedPosts().reduce((acc, p) => {
     const [year, month] = p.date.split('-')
@@ -193,12 +203,11 @@ export function postsByYearMonth() {
   return groups
 }
 
-// 全文搜索：匹配标题 / 摘要 / 正文 / 标签 / 分类（忽略大小写）
+// 全文搜索：只搜索已发布文章
 export function searchPosts(keyword) {
   const kw = (keyword || '').trim().toLowerCase()
   if (!kw) return []
   return sortedPosts().filter((p) => {
-    // content 可能是 Markdown 字符串（新版）或旧版段落数组
     const body = Array.isArray(p.content) ? p.content : [p.content || '']
     const haystack = [p.title, p.summary, p.category, ...p.tags, ...body]
       .join('\n')
