@@ -230,13 +230,13 @@ async function togglePostPublished(p) {
   store.posts[idx].published = newVal
   persistPosts()
   syncPostCount() // 自动同步文章数量
-  notify(newVal ? '已设为已发布，正在同步线上…' : '已设为草稿，正在从线上移除…')
+  notify(newVal ? '已设为已发布，正在同步线上…' : '已设为草稿，正在同步线上…')
   const ok = await publishAll()
   if (ok) {
     store.remoteUpdatedAt = new Date().toISOString()
-    notify(newVal ? '已发布到线上' : '已从线上移除，仅保留为本机草稿')
+    notify(newVal ? '已发布到线上，前台可见' : '已保存为草稿并同步到线上，仅后台可见')
   } else {
-    notify('本机状态已更新，但发布失败，请检查「发布设置」后重试', 'err')
+    notify('本机状态已更新，但同步线上失败，请检查「发布设置」后重试', 'err')
   }
 }
 
@@ -333,20 +333,18 @@ const postData = {
 
 if (isNew.value) {
     store.posts.push(postData)
-    notify(form.published ? '文章已发布' : '已保存为草稿')
+    notify(form.published ? '文章已发布' : '已保存为草稿（已同步到线上）')
   } else {
     const idx = store.posts.findIndex((p) => p.id === editing.value.id)
     if (idx >= 0) store.posts.splice(idx, 1, postData)
-    notify(form.published ? '文章已更新' : '已保存为草稿')
+    notify(form.published ? '文章已更新' : '已保存为草稿（已同步到线上）')
   }
   persistPosts()
   syncPostCount() // 自动同步文章数量
   editing.value = null
-  if (form.published) {
-    const ok = await publishAll()
-    if (ok) store.remoteUpdatedAt = new Date().toISOString()
-    if (!ok) notify('文章已保存到本机，但发布失败，请检查「发布设置」后重试', 'err')
-  }
+  const ok = await publishAll()
+  if (ok) store.remoteUpdatedAt = new Date().toISOString()
+  if (!ok) notify('文章已保存到本机，但同步线上失败，请检查「发布设置」后重试', 'err')
 }
 
 async function deletePost(p) {
@@ -715,8 +713,8 @@ loadRemote().then(() => {
                   :class="{ active: form.published === false }"
                   @click="form.published = false"
                 >草稿</button>
-                <span class="admin-save-hint" v-if="form.published === false">草稿仅保存在本机，不会出现在前台与线上。</span>
-                <span class="admin-save-hint" v-else>保存后将同步发布到前台与线上。</span>
+                <span class="admin-save-hint" v-if="form.published === false">草稿会同步到线上，仅后台可见，不会出现在前台。</span>
+                <span class="admin-save-hint" v-else>保存后将同步发布到线上，前台与后台均可见。</span>
               </div>
             </label>
           </div>
