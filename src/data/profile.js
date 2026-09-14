@@ -37,7 +37,7 @@ export const profile = {
       name: '个人博客系统',
       desc: '基于 Vue 3 + Vite 的内容型站点，支持文章、标签、归档与全文搜索，深浅双主题。',
       tags: ['Vue 3', 'Vite'],
-      link: ''
+      link: 'https://github.com/tan17ocean/tan17ocean.github.io'
     },
     {
       name: '数据大屏看板',

@@ -666,11 +666,27 @@ input {
 }
 
 .project-name a {
-  color: var(--text);
+  color: var(--primary);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  position: relative;
 }
-
+.project-name a::after {
+  content: "↗";
+  font-size: 0.75em;
+  opacity: 0.7;
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
 .project-name a:hover {
   color: var(--primary);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.project-name a:hover::after {
+  transform: translate(2px, -2px);
+  opacity: 1;
 }
 
 .project-desc {
@@ -1565,6 +1581,119 @@ input {
   .widget {
     flex: 1;
     min-width: 240px;
+  }
+}
+
+/* ---------- 文章目录 (TOC) ---------- */
+.post-toc {
+  width: 280px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 84px;
+  max-height: calc(100vh - 120px);
+  overflow-y: auto;
+  padding: 18px 16px;
+  border-radius: 12px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  align-self: flex-start;
+}
+
+.toc-title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0 0 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.toc-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.toc-item {
+  margin: 0;
+  padding: 0;
+}
+
+.toc-item a {
+  display: block;
+  padding: 6px 8px;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: var(--text-light);
+  text-decoration: none;
+  border-radius: 6px;
+  transition: all 0.18s;
+}
+
+.toc-item a:hover {
+  color: var(--primary);
+  background: rgba(var(--primary-rgb, 118, 75, 226), 0.06);
+}
+
+.toc-item.toc-active a {
+  color: var(--primary);
+  background: rgba(var(--primary-rgb, 118, 75, 226), 0.1);
+  font-weight: 600;
+}
+
+.toc-item.toc-h3 a {
+  padding-left: 20px;
+  font-size: 0.78rem;
+}
+
+/* 代码块复制按钮 */
+.code-block-wrapper {
+  position: relative;
+}
+
+.code-copy-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  padding: 5px 10px;
+  font-size: 0.75rem;
+  color: var(--text-light);
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s, transform 0.2s, background 0.2s, color 0.2s;
+  z-index: 2;
+}
+
+.code-block-wrapper:hover .code-copy-btn {
+  opacity: 1;
+}
+
+.code-copy-btn:hover {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+
+.code-copy-btn.copied {
+  background: #22c55e;
+  color: #fff;
+  border-color: #22c55e;
+}
+
+@media (max-width: 1020px) {
+  .post-toc {
+    width: 100%;
+    position: static;
+    max-height: none;
+    margin-bottom: 20px;
+    order: -1;
+  }
+
+  .blog-layout {
+    flex-direction: column;
   }
 }
 

@@ -1,0 +1,41 @@
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - generic [ref=e5]:
+      - link "tan17ocean" [ref=e6] [cursor=pointer]:
+        - /url: "#/"
+        - generic [ref=e8]: tan17ocean
+      - generic [ref=e9]:
+        - button "切换到深色模式" [ref=e10] [cursor=pointer]:
+          - img [ref=e11]
+        - button "打开菜单" [ref=e13] [cursor=pointer]:
+          - img [ref=e14]
+  - main [ref=e16]:
+    - generic [ref=e18]:
+      - generic [ref=e21]: tan17ocean
+      - heading "管理后台登录" [level=1] [ref=e22]
+      - paragraph [ref=e23]: 仅限站点所有者登录后执行编辑与发布操作
+      - generic [ref=e24]:
+        - generic [ref=e25]:
+          - generic [ref=e26]: 账号
+          - textbox "账号" [ref=e27]:
+            - /placeholder: 请输入登录账号
+        - generic [ref=e28]:
+          - generic [ref=e29]: 密码
+          - textbox "密码" [ref=e30]:
+            - /placeholder: 请输入登录密码
+        - button "登 录" [ref=e31] [cursor=pointer]
+      - link "返回主页" [ref=e32] [cursor=pointer]:
+        - /url: "#/"
+  - contentinfo [ref=e33]:
+    - generic [ref=e34]:
+      - paragraph [ref=e35]:
+        - text: © 2026
+        - strong [ref=e36]: tan17ocean
+        - text: · 由
+        - link "Vue 3" [ref=e37] [cursor=pointer]:
+          - /url: https://vuejs.org
+        - text: +
+        - link "Vite" [ref=e38] [cursor=pointer]:
+          - /url: https://vitejs.dev
+        - text: 驱动
+      - paragraph [ref=e39]: 已运行 00:00:00

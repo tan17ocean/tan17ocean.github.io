@@ -25,7 +25,7 @@ import {
 const router = useRouter()
 
 // ---------- 通用 ----------
-const activeTab = ref('profile')
+const activeTab = ref('posts')
 const toast = reactive({ show: false, text: '', kind: 'ok' })
 let toastTimer = null
 function notify(text, kind = 'ok') {
@@ -140,6 +140,31 @@ function resetSkillGroupsEdit() {
 }
 resetSkillGroupsEdit()
 
+// 同步统计数字：文章数量
+function syncPostCount() {
+  const count = String(store.posts.length)
+  const stats = profileForm.value.stats || []
+  const idx = stats.findIndex((s) => s.label === '篇文章')
+  if (idx >= 0) {
+    stats[idx].value = count
+  }
+  const sStats = store.profile.stats || []
+  const sIdx = sStats.findIndex((s) => s.label === '篇文章')
+  if (sIdx >= 0) {
+    sStats[sIdx].value = count
+  }
+}
+
+// 同步统计数字：项目数量
+function syncProjectCount() {
+  const count = String((profileForm.value.projects || []).length)
+  const stats = profileForm.value.stats || []
+  const idx = stats.findIndex((s) => s.label === '个项目')
+  if (idx >= 0) {
+    stats[idx].value = count
+  }
+}
+
 async function saveProfile() {
   setSkillGroups(skillGroupsEdit.value)
   // 规整：projects.tags 若是字符串则转数组；heroSubtitles 保持字符串数组
@@ -148,6 +173,7 @@ async function saveProfile() {
       p.tags = p.tags.split(/[,，]/).map((t) => t.trim()).filter(Boolean)
     }
   })
+  syncProjectCount() // 自动同步项目数量
   store.profile = JSON.parse(JSON.stringify(profileForm.value))
   persistProfile()
   const ok = await publishAll()
@@ -158,9 +184,21 @@ async function saveProfile() {
 // 统计 / 项目 / 时间线 的动态行操作
 function addRow(field, emptyRow) {
   profileForm.value[field].push({ ...emptyRow })
+  // 项目增删即时同步数量
+  if (field === 'projects') {
+    syncProjectCount()
+    store.profile = JSON.parse(JSON.stringify(profileForm.value))
+    persistProfile()
+  }
 }
 function removeRow(field, index) {
   profileForm.value[field].splice(index, 1)
+  // 项目增删即时同步数量
+  if (field === 'projects') {
+    syncProjectCount()
+    store.profile = JSON.parse(JSON.stringify(profileForm.value))
+    persistProfile()
+  }
 }
 function addSkillGroup() {
   skillGroupsEdit.value.push({ key: '', tags: '' })
@@ -272,6 +310,7 @@ async function savePost() {
     notify('文章已更新')
   }
   persistPosts()
+  syncPostCount() // 自动同步文章数量
   editing.value = null
   const ok = await publishAll()
   if (ok) store.remoteUpdatedAt = new Date().toISOString()
@@ -284,6 +323,7 @@ async function deletePost(p) {
   if (idx >= 0) {
     store.posts.splice(idx, 1)
     persistPosts()
+    syncPostCount() // 自动同步文章数量
   }
   const ok = await publishAll()
   if (ok) store.remoteUpdatedAt = new Date().toISOString()
@@ -362,41 +402,45 @@ loadRemote().then(() => {
     </div>
 
     <div class="admin-body">
-      <!-- Tab 导航 -->
-      <nav class="admin-tabs">
+      <!-- 快捷入口：兼容 tab 导航可能不渲染的情况 -->
+      <div class="admin-quick-nav">
         <button
           type="button"
-          class="admin-tab"
-          :class="{ active: activeTab === 'profile' }"
-          @click="activeTab = 'profile'"
-        >
-          资料编辑
-        </button>
-        <button
-          type="button"
-          class="admin-tab"
+          class="quick-card"
           :class="{ active: activeTab === 'posts' }"
           @click="activeTab = 'posts'"
         >
-          博客管理
+          <span class="quick-icon">&#128218;</span>
+          <span class="quick-label">博客管理</span>
         </button>
         <button
           type="button"
-          class="admin-tab"
+          class="quick-card"
+          :class="{ active: activeTab === 'profile' }"
+          @click="activeTab = 'profile'"
+        >
+          <span class="quick-icon">&#128100;</span>
+          <span class="quick-label">资料编辑</span>
+        </button>
+        <button
+          type="button"
+          class="quick-card"
           :class="{ active: activeTab === 'data' }"
           @click="activeTab = 'data'"
         >
-          数据工具
+          <span class="quick-icon">&#128202;</span>
+          <span class="quick-label">数据工具</span>
         </button>
         <button
           type="button"
-          class="admin-tab"
+          class="quick-card"
           :class="{ active: activeTab === 'publish' }"
           @click="activeTab = 'publish'"
         >
-          发布设置
+          <span class="quick-icon">&#128640;</span>
+          <span class="quick-label">发布设置</span>
         </button>
-      </nav>
+      </div>
 
       <!-- 资料编辑 -->
       <section v-if="activeTab === 'profile'" class="admin-section">
@@ -477,7 +521,7 @@ loadRemote().then(() => {
                   placeholder="标签，逗号分隔"
                   @input="p.tags = $event.target.value.split(/[,，]/).map((t) => t.trim()).filter(Boolean)"
                 />
-                <input v-model.trim="p.link" class="admin-input" placeholder="链接（可选）" />
+                <input v-model.trim="p.link" class="admin-input" placeholder="项目地址 https://...（可选）" />
               </div>
             </div>
             <button type="button" class="btn btn-ghost btn-sm" @click="addRow('projects', { name: '', desc: '', tags: [], link: '' })">+ 添加项目</button>

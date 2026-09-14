@@ -1,0 +1,45 @@
+- generic:
+  - generic:
+    - generic:
+      - banner:
+        - generic [ref=e1]:
+          - link "tan17ocean" [ref=e2] [cursor=pointer]:
+            - /url: "#/"
+            - generic [ref=e4]: tan17ocean
+          - generic [ref=e5]:
+            - button "切换到深色模式" [ref=e6] [cursor=pointer]:
+              - img [ref=e7]
+            - button "打开菜单" [ref=e9] [cursor=pointer]:
+              - img [ref=e10]
+      - main:
+        - generic [ref=e19]:
+          - generic [ref=e22]: tan17ocean
+          - heading "管理后台登录" [level=1]
+          - paragraph: 仅限站点所有者登录后执行编辑与发布操作
+          - generic:
+            - generic:
+              - generic: 账号
+              - textbox "账号" [ref=e23]:
+                - /placeholder: 请输入登录账号
+                - text: 1515618169@qq.com
+            - generic:
+              - generic: 密码
+              - textbox "密码" [active] [ref=e24]:
+                - /placeholder: 请输入登录密码
+                - text: tjw20040709tjw
+            - button "登 录" [ref=e25] [cursor=pointer]
+          - link "返回主页" [ref=e26] [cursor=pointer]:
+            - /url: "#/"
+      - contentinfo:
+        - generic [ref=e12]:
+          - paragraph [ref=e13]:
+            - text: © 2026
+            - strong [ref=e14]: tan17ocean
+            - text: · 由
+            - link "Vue 3" [ref=e15] [cursor=pointer]:
+              - /url: https://vuejs.org
+            - text: +
+            - link "Vite" [ref=e16] [cursor=pointer]:
+              - /url: https://vitejs.dev
+            - text: 驱动
+          - paragraph [ref=e17]: 已运行 00:01:24

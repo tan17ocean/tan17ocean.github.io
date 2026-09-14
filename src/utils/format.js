@@ -78,8 +78,42 @@ export function readingTime(content) {
 
 // Markdown -> 安全 HTML
 // - 开启 GFM（表格 / 删除线 / 自动链接）
+// - 给 h2/h3 注入锚点 id，支持 TOC 跳转
 // - 经 DOMPurify 清洗，防止原始 HTML 注入（站长写作内容 + 发布链路的第二道防线）
 export function mdToHtml(md) {
-  const raw = marked.parse(toMarkdownText(md), { gfm: true, breaks: false })
+  const renderer = new marked.Renderer()
+  // marked v18+: heading renderer 接收 token 对象 { text, depth, tokens }
+  renderer.heading = (token) => {
+    const { text, depth: level } = token
+    if (level === 2 || level === 3) {
+      const id = text
+        .toLowerCase()
+        .replace(/<[^>]+>/g, '')
+        .replace(/[^\w\u4e00-\u9fa5]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+      return `<h${level} id="${id}">${text}</h${level}>`
+    }
+    return `<h${level}>${text}</h${level}>`
+  }
+  const raw = marked.parse(toMarkdownText(md), { gfm: true, breaks: false, renderer })
   return DOMPurify.sanitize(raw, { USE_PROFILES: { html: true } })
+}
+
+// 提取 TOC（h2/h3）
+// 返回 [{ level: 2|3, text: string, id: string }]
+export function extractToc(md) {
+  const text = toMarkdownText(md)
+  const tokens = marked.lexer(text)
+  const toc = []
+  tokens.forEach((token) => {
+    if (token.type === 'heading' && (token.depth === 2 || token.depth === 3)) {
+      const id = token.text
+        .toLowerCase()
+        .replace(/<[^>]+>/g, '')
+        .replace(/[^\w\u4e00-\u9fa5]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+      toc.push({ level: token.depth, text: token.text, id })
+    }
+  })
+  return toc
 }

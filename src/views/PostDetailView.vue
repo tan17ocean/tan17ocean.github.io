@@ -1,15 +1,60 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, ref, watch, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import BlogLayout from '../components/BlogLayout.vue'
+import PostToc from '../components/PostToc.vue'
 import { store, sortedPosts } from '../composables/useContentStore'
-import { formatDateCN, readingTime, mdToHtml } from '../utils/format'
+import { formatDateCN, readingTime, mdToHtml, extractToc } from '../utils/format'
 
 const route = useRoute()
 
 const post = computed(() => store.posts.find((p) => p.id === route.params.id))
 const html = computed(() => (post.value ? mdToHtml(post.value.content) : ''))
+const toc = computed(() => (post.value ? extractToc(post.value.content) : []))
 const readMins = computed(() => (post.value ? readingTime(post.value.content) : 0))
+const contentEl = ref(null)
+
+// ---------- 代码块复制按钮 ----------
+function initCodeCopy() {
+  if (!contentEl.value) return
+  const blocks = contentEl.value.querySelectorAll('pre')
+  blocks.forEach((pre) => {
+    if (pre.querySelector('.code-copy-btn')) return
+    const btn = document.createElement('button')
+    btn.className = 'code-copy-btn'
+    btn.textContent = '复制'
+    btn.type = 'button'
+    btn.addEventListener('click', async () => {
+      const code = pre.querySelector('code')
+      const text = code ? code.textContent : pre.textContent
+      try {
+        await navigator.clipboard.writeText(text)
+        btn.textContent = '已复制'
+        btn.classList.add('copied')
+        setTimeout(() => {
+          btn.textContent = '复制'
+          btn.classList.remove('copied')
+        }, 2000)
+      } catch {
+        btn.textContent = '失败'
+        setTimeout(() => {
+          btn.textContent = '复制'
+          btn.classList.remove('copied')
+        }, 2000)
+      }
+    })
+    pre.classList.add('code-block-wrapper')
+    pre.appendChild(btn)
+  })
+}
+
+watch(html, () => {
+  requestAnimationFrame(initCodeCopy)
+})
+
+onMounted(() => {
+  requestAnimationFrame(initCodeCopy)
+})
 
 const siblings = computed(() => {
   if (!post.value) return { prev: null, next: null }
@@ -37,7 +82,8 @@ const siblings = computed(() => {
           </div>
         </header>
 
-        <div class="post-content markdown-body" v-html="html"></div>
+        <PostToc v-if="toc.length" :toc="toc" />
+        <div ref="contentEl" class="post-content markdown-body" v-html="html"></div>
 
         <footer class="post-detail-foot">
           <div class="tag-list">
@@ -62,10 +108,16 @@ const siblings = computed(() => {
       </article>
     </template>
 
-    <section v-else class="not-found">
-      <h1>文章不存在</h1>
-      <p>你访问的文章已被移除或地址有误。</p>
-      <router-link to="/posts" class="btn btn-primary">返回博客列表</router-link>
-    </section>
+    <template v-else>
+      <section class="not-found">
+        <h1>文章不存在</h1>
+        <p>你访问的文章已被移除或地址有误。</p>
+        <router-link to="/posts" class="btn btn-primary">返回博客列表</router-link>
+      </section>
+    </template>
+
+    <template #side>
+      <PostToc v-if="post && toc.length" :toc="toc" />
+    </template>
   </BlogLayout>
 </template>
