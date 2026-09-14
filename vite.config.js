@@ -5,6 +5,14 @@ import vue from '@vitejs/plugin-vue'
 export default defineConfig({
   plugins: [vue()],
   base: './',
+  build: {
+    rollupOptions: {
+      output: {
+        // 避免 chunk 文件名以 _ 开头（GitHub Pages Jekyll 会丢弃）
+        chunkFileNames: 'assets/[name]-[hash].js'
+      }
+    }
+  },
   server: {
     port: 5174,
     host: true

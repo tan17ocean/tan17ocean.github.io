@@ -20,6 +20,14 @@ TMP_DIR="/tmp/gh-pages-deploy"
 echo "==> [1/4] 重新构建 dist"
 npm run build
 
+# 修复 GitHub Pages Jekyll 丢弃 _ 开头文件的问题
+echo "==> [1.5/4] 修复 Jekyll 下划线文件问题"
+node scripts/fix-jekyll.js
+
+# GitHub Pages 默认启用 Jekyll，会忽略 _ 开头的文件
+# 创建 .nojekyll 禁用 Jekyll（双重保险）
+touch dist/.nojekyll
+
 echo "==> [2/4] 推送源码到 main"
 git push origin main
 
@@ -35,15 +43,17 @@ if git cat-file -e HEAD:content.json 2>/dev/null; then
   HAS_CONTENT=true
   git show HEAD:content.json > "$OLDPWD/.deploy-keep-content.json"
 fi
-find . -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
-cp -r "$OLDPWD/dist/"* .
+find . -mindepth 1 -maxdepth 1 -exec rm -rf {} + 2>/dev/null || true
+# 复制 dist 到当前目录（含隐藏文件）
+cp -r "$OLDPWD/dist/"* . 2>/dev/null || true
+cp "$OLDPWD/dist/".* . 2>/dev/null || true
 if [ "$HAS_CONTENT" = true ]; then
   cp "$OLDPWD/.deploy-keep-content.json" content.json
   rm -f "$OLDPWD/.deploy-keep-content.json"
   echo "已保留线上 content.json（后台数据不会被重置）"
 fi
 git add -A
-git commit -m "deploy: login + admin dashboard"
+git commit -m "deploy: fix Jekyll ignoring underscore files (.nojekyll)"
 git push origin HEAD:gh-pages
 cd / && rm -rf "$TMP_DIR"
 
