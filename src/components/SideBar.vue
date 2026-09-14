@@ -1,7 +1,10 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, inject } from 'vue'
 import { store } from '../composables/useContentStore'
 import { sortedPosts, tagCounts } from '../composables/useContentStore'
+import PostToc from './PostToc.vue'
+
+const postToc = inject('postToc', null)
 
 const recentPosts = computed(() => sortedPosts().slice(0, 5))
 const tags = computed(() => {
@@ -56,6 +59,9 @@ const socials = computed(() => {
       <h4 class="widget-title">公告</h4>
       <p class="widget-notice">{{ store.profile.notice }}</p>
     </section>
+
+    <!-- 目录（仅在文章详情页显示）-->
+    <PostToc v-if="postToc && postToc.length" :toc="postToc" />
 
     <!-- 近期文章 -->
     <section class="widget">

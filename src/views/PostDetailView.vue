@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref, watch, onMounted } from 'vue'
+import { computed, ref, watch, onMounted, provide } from 'vue'
 import { useRoute } from 'vue-router'
 import BlogLayout from '../components/BlogLayout.vue'
 import PostToc from '../components/PostToc.vue'
@@ -11,6 +11,7 @@ const route = useRoute()
 const post = computed(() => store.posts.find((p) => p.id === route.params.id))
 const html = computed(() => (post.value ? mdToHtml(post.value.content) : ''))
 const toc = computed(() => (post.value ? extractToc(post.value.content) : []))
+provide('postToc', toc)
 const readMins = computed(() => (post.value ? readingTime(post.value.content) : 0))
 const contentEl = ref(null)
 
@@ -82,11 +83,7 @@ const siblings = computed(() => {
           </div>
         </header>
 
-        <!-- 正文区域：左侧目录 + 右侧内容 -->
-        <div class="post-body">
-          <PostToc v-if="toc.length" :toc="toc" />
-          <div ref="contentEl" class="post-content markdown-body" v-html="html"></div>
-        </div>
+        <div ref="contentEl" class="post-content markdown-body" v-html="html"></div>
 
         <footer class="post-detail-foot">
           <div class="tag-list">

@@ -1158,29 +1158,7 @@ input {
 }
 
 .post-content {
-  flex: 1;
-  min-width: 0;
-}
-
-/* ---------- 正文区域：目录 + 内容双栏 ---------- */
-.post-body {
-  display: flex;
-  gap: 28px;
-  align-items: flex-start;
-  margin-bottom: 28px;
-}
-
-@media (max-width: 1020px) {
-  .post-body {
-    flex-direction: column;
-  }
-  .post-body .post-toc {
-    width: 100%;
-    position: static;
-    max-height: none;
-    margin-bottom: 20px;
-    order: -1;
-  }
+  font-size: 1rem;
 }
 
 /* ---------- 正文 Markdown 排版 ---------- */
@@ -1608,8 +1586,7 @@ input {
 
 /* ---------- 文章目录 (TOC) ---------- */
 .post-toc {
-  width: 280px;
-  flex-shrink: 0;
+  width: 100%;
   position: sticky;
   top: 84px;
   max-height: calc(100vh - 120px);
@@ -1618,7 +1595,6 @@ input {
   border-radius: 12px;
   background: var(--card);
   border: 1px solid var(--border);
-  align-self: flex-start;
 }
 
 .toc-title {
