@@ -140,9 +140,9 @@ function resetSkillGroupsEdit() {
 }
 resetSkillGroupsEdit()
 
-// 同步统计数字：文章数量
+// 同步统计数字：文章数量（只统计已发布）
 function syncPostCount() {
-  const count = String(store.posts.length)
+  const count = String(store.posts.filter((p) => p.published !== false).length)
   const stats = profileForm.value.stats || []
   const idx = stats.findIndex((s) => s.label === '篇文章')
   if (idx >= 0) {
