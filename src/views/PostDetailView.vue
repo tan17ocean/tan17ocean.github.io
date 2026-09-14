@@ -82,8 +82,11 @@ const siblings = computed(() => {
           </div>
         </header>
 
-        <PostToc v-if="toc.length" :toc="toc" />
-        <div ref="contentEl" class="post-content markdown-body" v-html="html"></div>
+        <!-- 正文区域：左侧目录 + 右侧内容 -->
+        <div class="post-body">
+          <PostToc v-if="toc.length" :toc="toc" />
+          <div ref="contentEl" class="post-content markdown-body" v-html="html"></div>
+        </div>
 
         <footer class="post-detail-foot">
           <div class="tag-list">
@@ -117,7 +120,7 @@ const siblings = computed(() => {
     </template>
 
     <template #side>
-      <PostToc v-if="post && toc.length" :toc="toc" />
+      <SideBar />
     </template>
   </BlogLayout>
 </template>
