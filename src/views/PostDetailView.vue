@@ -5,6 +5,9 @@ import BlogLayout from '../components/BlogLayout.vue'
 import PostToc from '../components/PostToc.vue'
 import { store, sortedPosts } from '../composables/useContentStore'
 import { formatDateCN, readingTime, mdToHtml, extractToc } from '../utils/format'
+import PostLikeBar from '../components/PostLikeBar.vue'
+import PostShare from '../components/PostShare.vue'
+import PostComments from '../components/PostComments.vue'
 
 const route = useRoute()
 
@@ -120,6 +123,13 @@ const siblings = computed(() => {
             </router-link>
             <span v-else class="pager-link pager-empty"></span>
           </nav>
+
+          <!-- 点赞 & 分享 -->
+          <PostLikeBar :post-id="post.id" :post-title="post.title" />
+          <PostShare :title="post.title" :id="post.id" />
+
+          <!-- Giscus 评论 -->
+          <PostComments :post-id="post.id" />
         </footer>
       </article>
     </template>
