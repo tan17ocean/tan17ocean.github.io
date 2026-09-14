@@ -174,6 +174,7 @@ async function saveProfile() {
     }
   })
   syncProjectCount() // 自动同步项目数量
+  syncPostCount()    // 自动同步文章数量（仅已发布）
   store.profile = JSON.parse(JSON.stringify(profileForm.value))
   persistProfile()
   const ok = await publishAll()
@@ -648,7 +649,8 @@ loadRemote().then(() => {
             <tbody>
               <tr v-for="p in postList" :key="p.id">
                 <td>
-                  <router-link :to="`/post/${p.id}`" class="admin-post-title">{{ p.title }}</router-link>
+                  <span v-if="p.published === false" class="admin-post-title draft-title">{{ p.title }}</span>
+                  <router-link v-else :to="`/post/${p.id}`" class="admin-post-title">{{ p.title }}</router-link>
                 </td>
                 <td>{{ p.category }}</td>
                 <td>{{ p.date }}</td>

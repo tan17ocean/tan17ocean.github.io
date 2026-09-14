@@ -8,7 +8,7 @@ import { formatDateCN, readingTime, mdToHtml, extractToc } from '../utils/format
 
 const route = useRoute()
 
-const post = computed(() => store.posts.find((p) => p.id === route.params.id))
+const post = computed(() => store.posts.find((p) => p.id === route.params.id && p.published !== false))
 const html = computed(() => (post.value ? mdToHtml(post.value.content) : ''))
 const toc = computed(() => (post.value ? extractToc(post.value.content) : []))
 provide('postToc', toc)
