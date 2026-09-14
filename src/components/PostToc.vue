@@ -59,7 +59,7 @@ onUnmounted(() => {
         v-for="item in toc"
         :key="item.id"
         class="toc-item"
-        :class="{ 'toc-active': activeId === item.id, 'toc-h3': item.level === 3 }"
+        :class="{ 'toc-active': activeId === item.id, 'toc-h1': item.level === 1, 'toc-h3': item.level === 3 }"
       >
         <a href="javascript:;" @click.prevent="onClick(item.id)">
           {{ item.text }}
