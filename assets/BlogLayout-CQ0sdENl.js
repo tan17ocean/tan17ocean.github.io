@@ -1,0 +1,1 @@
+import{S as t}from"./SideBar-9MZIkAVe.js";import{d as a,e as r,g as s,Y as o,h as c}from"./index-DhtHPPX2.js";const l={class:"page page-blog"},d={class:"blog-layout"},n={class:"blog-content"},m={__name:"BlogLayout",setup(_){return(e,i)=>(a(),r("div",l,[s("div",d,[s("div",n,[o(e.$slots,"default")]),o(e.$slots,"side",{},()=>[c(t)])])]))}};export{m as _};
