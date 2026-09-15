@@ -38,7 +38,7 @@ const sortBy = ref('total')
 const sortDesc = ref(true)
 
 const postStats = computed(() => getAllPostStats(store.posts))
-const totalStats = computed(() => getTotalStats(store.posts))
+const totalStats = computed(() => getTotalStats())
 const sortedStats = computed(() => {
   const list = [...postStats.value]
   const dir = sortDesc.value ? -1 : 1
@@ -75,11 +75,6 @@ function refreshComments() {
 }
 
 const router = useRouter()
-
-// 切换到数据统计页时拉取线上评论数
-watch(activeTab, (tab) => {
-  if (tab === 'stats') refreshComments()
-})
 
 // ---------- 通用 ----------
 const activeTab = ref('posts')
@@ -1068,6 +1063,15 @@ loadRemote().then(() => {
               </div>
             </div>
           </div>
+        </div>
+
+        <div class="admin-card">
+          <h3 class="admin-card-title">RSS 订阅说明</h3>
+          <p class="admin-card-text">
+            每次「保存并发布」或执行 <code>npm run build</code> 时，系统会自动根据已发布文章生成
+            <code>/feed.xml</code>
+            文件。该文件遵循 RSS 2.0 规范，只包含已发布文章（published !== false）。
+          </p>
         </div>
 
         <div class="admin-card">

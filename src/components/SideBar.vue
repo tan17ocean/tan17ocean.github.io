@@ -77,6 +77,21 @@ const socials = computed(() => {
       </ul>
     </section>
 
+    <!-- RSS 订阅 -->
+    <section class="widget">
+      <h4 class="widget-title">RSS 订阅</h4>
+      <div style="padding: 0 20px 20px;">
+        <a href="/feed.xml" target="_blank" rel="noopener noreferrer" class="rss-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="currentColor" style="vertical-align:middle;margin-right:6px;">
+            <path d="M4 4a2 2 0 012 2v.093a2 2 0 01-2 2A2 2 0 014 4z"/>
+            <path d="M4 8c7.732 0 14 6.268 14 14h-4c0-5.523-4.477-10-10-10H4z"/>
+            <path d="M4 14c4.418 0 8 3.582 8 8H8c0-2.21-1.79-4-4-4v-4z"/>
+          </svg>
+          订阅本站更新
+        </a>
+      </div>
+    </section>
+
     <!-- 标签云 -->
     <section class="widget">
       <h4 class="widget-title">标签</h4>
@@ -93,3 +108,26 @@ const socials = computed(() => {
     </section>
   </aside>
 </template>
+
+<style scoped>
+.rss-link {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: var(--primary-soft);
+  color: var(--primary);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.rss-link:hover {
+  background: var(--primary);
+  color: #fff;
+}
+.rss-link svg {
+  flex-shrink: 0;
+}
+</style>
