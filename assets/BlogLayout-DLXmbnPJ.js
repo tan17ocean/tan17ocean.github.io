@@ -1,1 +1,0 @@
-import{_ as s}from"./SideBar-CJpTg_5v.js";import{d as t,e as a,g as e,X as c,h as _}from"./index-D95kf3BN.js";const r={class:"page page-blog"},l={class:"blog-layout"},n={class:"blog-content"},g={__name:"BlogLayout",setup(d){return(o,i)=>(t(),a("div",r,[e("div",l,[e("div",n,[c(o.$slots,"default")]),_(s)])]))}};export{g as _};
