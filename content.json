@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-15T00:38:57.323Z",
+  "updatedAt": "2026-09-15T00:52:34.276Z",
   "profile": {
     "name": "tan17ocean",
     "heroSubtitles": [
@@ -283,7 +283,7 @@
         "## 接下来",
         "下一个目标是 300 天，以及把配速练进 6 分以内。跑步这件事，慢一点没关系，持续才重要。"
       ],
-      "pinned": true
+      "pinned": false
     },
     {
       "id": "debug-journey",
