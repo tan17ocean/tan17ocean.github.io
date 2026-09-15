@@ -52,8 +52,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <nav v-if="toc.length" class="post-toc" aria-label="文章目录">
-    <h4 class="toc-title">目录</h4>
+  <nav v-if="toc.length" class="toc-nav" aria-label="文章目录">
     <ul class="toc-list">
       <li
         v-for="item in toc"

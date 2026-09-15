@@ -61,7 +61,10 @@ const socials = computed(() => {
     </section>
 
     <!-- 目录（仅在文章详情页显示）-->
-    <PostToc v-if="postToc && postToc.length" :toc="postToc" />
+    <section v-if="postToc && postToc.length" class="widget widget-toc">
+      <h4 class="widget-title">目录</h4>
+      <PostToc :toc="postToc" />
+    </section>
 
     <!-- 近期文章 -->
     <section class="widget">

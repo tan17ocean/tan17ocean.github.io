@@ -22,8 +22,8 @@ async function fix() {
     console.log(`[fix-jekyll] ${oldName} -> ${newName}`)
   }
 
-  // 替换所有 .js 文件中的引用
-  const jsFiles = files.filter(f => f.endsWith('.js'))
+  // 替换所有 .js 文件中的引用（重命名后重新获取最新目录列表，避免读到已重命名的旧文件）
+  const jsFiles = (await readdir(assetsDir)).filter(f => !f.startsWith('_') && f.endsWith('.js'))
   for (const f of jsFiles) {
     const path = join(assetsDir, f)
     let content = await readFile(path, 'utf-8')

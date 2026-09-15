@@ -43,10 +43,10 @@ if git cat-file -e HEAD:content.json 2>/dev/null; then
   HAS_CONTENT=true
   git show HEAD:content.json > "$OLDPWD/.deploy-keep-content.json"
 fi
-find . -mindepth 1 -maxdepth 1 -exec rm -rf {} + 2>/dev/null || true
-# 复制 dist 到当前目录（含隐藏文件）
+find . -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} + 2>/dev/null || true
+# 复制 dist 到当前目录（含隐藏文件；不能用 .* 通配，会误带 . 与 ..）
 cp -r "$OLDPWD/dist/"* . 2>/dev/null || true
-cp "$OLDPWD/dist/".* . 2>/dev/null || true
+[ -f "$OLDPWD/dist/.nojekyll" ] && cp "$OLDPWD/dist/.nojekyll" .
 if [ "$HAS_CONTENT" = true ]; then
   cp "$OLDPWD/.deploy-keep-content.json" content.json
   rm -f "$OLDPWD/.deploy-keep-content.json"

@@ -166,9 +166,26 @@ export const allCategories = [...new Set(publishedPosts().map((p) => p.category)
 
 export const allTags = [...new Set(publishedPosts().flatMap((p) => p.tags))].sort()
 
-// 按日期倒序返回已发布文章列表（前台专用）
+// 获取所有系列名称（去重排序）
+export function allSeries() {
+  return [...new Set(publishedPosts().map((p) => p.series).filter(Boolean))].sort()
+}
+
+// 获取某系列下的已发布文章，按 seriesOrder 排序
+export function getSeriesPosts(seriesName) {
+  if (!seriesName) return []
+  return publishedPosts()
+    .filter((p) => p.series === seriesName)
+    .sort((a, b) => (a.seriesOrder || 0) - (b.seriesOrder || 0))
+}
+
+// 按置顶优先 + 日期倒序返回已发布文章列表（前台专用）
 export function sortedPosts() {
-  return [...publishedPosts()].sort((a, b) => (a.date < b.date ? 1 : -1))
+  return [...publishedPosts()].sort((a, b) => {
+    if (a.pinned && !b.pinned) return -1
+    if (!a.pinned && b.pinned) return 1
+    return a.date < b.date ? 1 : -1
+  })
 }
 
 // 按分类统计已发布文章数

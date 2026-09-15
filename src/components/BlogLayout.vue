@@ -8,7 +8,9 @@ import SideBar from './SideBar.vue'
       <div class="blog-content">
         <slot />
       </div>
-      <SideBar />
+      <slot name="side">
+        <SideBar />
+      </slot>
     </div>
   </div>
 </template>

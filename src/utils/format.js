@@ -1,6 +1,52 @@
 // ---------- 通用工具函数 ----------
 import { marked } from 'marked'
 import DOMPurify from 'dompurify'
+import hljs from 'highlight.js/lib/core'
+import javascript from 'highlight.js/lib/languages/javascript'
+import typescript from 'highlight.js/lib/languages/typescript'
+import python from 'highlight.js/lib/languages/python'
+import java from 'highlight.js/lib/languages/java'
+import cpp from 'highlight.js/lib/languages/cpp'
+import c from 'highlight.js/lib/languages/c'
+import css from 'highlight.js/lib/languages/css'
+import xml from 'highlight.js/lib/languages/xml'
+import bash from 'highlight.js/lib/languages/bash'
+import json from 'highlight.js/lib/languages/json'
+import markdown from 'highlight.js/lib/languages/markdown'
+import sql from 'highlight.js/lib/languages/sql'
+import yaml from 'highlight.js/lib/languages/yaml'
+import go from 'highlight.js/lib/languages/go'
+import rust from 'highlight.js/lib/languages/rust'
+import php from 'highlight.js/lib/languages/php'
+import ruby from 'highlight.js/lib/languages/ruby'
+
+hljs.registerLanguage('javascript', javascript)
+hljs.registerLanguage('js', javascript)
+hljs.registerLanguage('typescript', typescript)
+hljs.registerLanguage('ts', typescript)
+hljs.registerLanguage('python', python)
+hljs.registerLanguage('py', python)
+hljs.registerLanguage('java', java)
+hljs.registerLanguage('cpp', cpp)
+hljs.registerLanguage('c++', cpp)
+hljs.registerLanguage('c', c)
+hljs.registerLanguage('css', css)
+hljs.registerLanguage('html', xml)
+hljs.registerLanguage('xml', xml)
+hljs.registerLanguage('bash', bash)
+hljs.registerLanguage('shell', bash)
+hljs.registerLanguage('sh', bash)
+hljs.registerLanguage('json', json)
+hljs.registerLanguage('markdown', markdown)
+hljs.registerLanguage('md', markdown)
+hljs.registerLanguage('sql', sql)
+hljs.registerLanguage('yaml', yaml)
+hljs.registerLanguage('yml', yaml)
+hljs.registerLanguage('go', go)
+hljs.registerLanguage('rust', rust)
+hljs.registerLanguage('php', php)
+hljs.registerLanguage('ruby', ruby)
+hljs.registerLanguage('rb', ruby)
 
 // '2026-09-01' -> '2026 年 9 月 1 日'
 export function formatDateCN(dateStr) {
@@ -79,7 +125,8 @@ export function readingTime(content) {
 // Markdown -> 安全 HTML
 // - 开启 GFM（表格 / 删除线 / 自动链接）
 // - 给 h1/h2/h3 注入锚点 id，支持 TOC 跳转
-// - 经 DOMPurify 清洗，防止原始 HTML 注入（站长写作内容 + 发布链路的第二道防线）
+// - 代码块经 highlight.js 语法高亮
+// - 经 DOMPurify 清洗，防止原始 HTML 注入
 export function mdToHtml(md) {
   const renderer = new marked.Renderer()
   // marked v18+: heading renderer 接收 token 对象 { text, depth, tokens }
@@ -94,6 +141,15 @@ export function mdToHtml(md) {
       return `<h${level} id="${id}">${text}</h${level}>`
     }
     return `<h${level}>${text}</h${level}>`
+  }
+  // 代码块高亮
+  renderer.code = (token) => {
+    const { text, lang } = token
+    const validLang = lang && hljs.getLanguage(lang) ? lang : 'plaintext'
+    const highlighted = validLang === 'plaintext'
+      ? hljs.highlightAuto(text).value
+      : hljs.highlight(text, { language: validLang }).value
+    return `<pre><code class="hljs language-${validLang}">${highlighted}</code></pre>`
   }
   const raw = marked.parse(toMarkdownText(md), { gfm: true, breaks: false, renderer })
   return DOMPurify.sanitize(raw, { USE_PROFILES: { html: true } })

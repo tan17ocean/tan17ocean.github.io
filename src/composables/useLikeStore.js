@@ -47,3 +47,8 @@ export function toggleLike(postId) {
   saveLikes(data)
   return { liked: idx === -1, count }
 }
+
+// 供后台统计页读取全部文章的点赞数
+export function getAllLikeStats() {
+  return loadLikes().counts
+}
