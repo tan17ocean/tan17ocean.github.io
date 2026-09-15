@@ -14,10 +14,24 @@ const shareUrl = computed(() => {
     : `#/post/${props.id}`
 })
 
+// ---------- 分享统计 ----------
+const LS_SHARES = 'tan-home-shares'
+function recordShare(postId) {
+  try {
+    const raw = localStorage.getItem(LS_SHARES)
+    const data = raw ? JSON.parse(raw) : {}
+    data[postId] = (data[postId] || 0) + 1
+    localStorage.setItem(LS_SHARES, JSON.stringify(data))
+  } catch {
+    /* ignore */
+  }
+}
+
 async function copyLink() {
   try {
     await navigator.clipboard.writeText(shareUrl.value)
     copied.value = true
+    recordShare(props.id)
     setTimeout(() => (copied.value = false), 2000)
   } catch {
     // fallback
@@ -28,6 +42,7 @@ async function copyLink() {
     document.execCommand('copy')
     document.body.removeChild(ta)
     copied.value = true
+    recordShare(props.id)
     setTimeout(() => (copied.value = false), 2000)
   }
 }
@@ -35,17 +50,20 @@ async function copyLink() {
 function shareTwitter() {
   const url = encodeURIComponent(shareUrl.value)
   const text = encodeURIComponent(props.title)
+  recordShare(props.id)
   window.open(`https://twitter.com/intent/tweet?url=${url}&text=${text}`, '_blank', 'noopener,noreferrer')
 }
 
 function shareWeibo() {
   const url = encodeURIComponent(shareUrl.value)
   const text = encodeURIComponent(props.title)
+  recordShare(props.id)
   window.open(`https://service.weibo.com/share/share.php?url=${url}&title=${text}`, '_blank', 'noopener,noreferrer')
 }
 
 function shareWechat() {
   const url = encodeURIComponent(shareUrl.value)
+  recordShare(props.id)
   window.open(`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${url}`, '_blank', 'noopener,noreferrer')
 }
 </script>

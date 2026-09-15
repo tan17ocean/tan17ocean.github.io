@@ -629,6 +629,25 @@
   border-color: rgba(229, 72, 77, 0.5);
 }
 
+.admin-mini-btn.pin {
+  color: var(--primary);
+  border-color: var(--primary);
+  background: var(--primary-soft);
+}
+
+.admin-pin-badge {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 1px 7px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--primary);
+  background: var(--primary-soft);
+  border: 1px solid var(--primary);
+  border-radius: 6px;
+  vertical-align: middle;
+}
+
 .admin-empty {
   color: var(--text-muted);
   text-align: center;
@@ -884,4 +903,115 @@
 .toast-leave-to {
   opacity: 0;
   transform: translateX(-50%) translateY(10px);
+}
+
+/* ============ 数据统计 ============ */
+.admin-grid.four {
+  grid-template-columns: repeat(4, 1fr);
+  margin-bottom: 20px;
+}
+
+.stat-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 18px 20px;
+}
+
+.stat-icon {
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.stat-value {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.stat-label {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.stats-toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.stats-table th,
+.stats-table td {
+  padding: 10px 12px;
+  font-size: 0.9rem;
+}
+
+.stats-table th {
+  white-space: nowrap;
+}
+
+.stats-table td.num-col {
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.stats-table th.num-col {
+  text-align: center;
+}
+
+.stats-table .stat-total {
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.stats-link {
+  color: var(--text);
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 0.15s ease;
+}
+
+.stats-link:hover {
+  color: var(--primary);
+  text-decoration: underline;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.status-badge.published {
+  color: #178a5b;
+  background: rgba(23, 138, 91, 0.1);
+}
+
+.status-badge.draft {
+  color: #e5a50a;
+  background: rgba(229, 165, 10, 0.12);
+}
+
+.stats-syncing {
+  color: var(--primary);
+}
+
+@media (max-width: 900px) {
+  .admin-grid.four {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 560px) {
+  .admin-grid.four {
+    grid-template-columns: 1fr 1fr;
+  }
+  .stat-value {
+    font-size: 1.6rem;
+  }
 }

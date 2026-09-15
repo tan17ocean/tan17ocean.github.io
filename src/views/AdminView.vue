@@ -1,5 +1,5 @@
 <script setup>
-import { ref, reactive, computed } from 'vue'
+import { ref, reactive, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import {
   store,
@@ -21,11 +21,73 @@ import {
   verifyToken,
   diagnosePublish
 } from '../utils/githubPublish'
+import { getAllPostStats, getTotalStats, fetchCommentStats } from '../composables/useStatsStore'
+
+// —— 数据统计 ——
+const commentLoading = ref(false)
+const commentSync = ref('')
+const sortColumns = [
+  { key: 'total', label: '总分' },
+  { key: 'views', label: '访问' },
+  { key: 'likes', label: '点赞' },
+  { key: 'shares', label: '分享' },
+  { key: 'comments', label: '评论' },
+  { key: 'date', label: '日期' }
+]
+const sortBy = ref('total')
+const sortDesc = ref(true)
+
+const postStats = computed(() => getAllPostStats(store.posts))
+const totalStats = computed(() => getTotalStats(store.posts))
+const sortedStats = computed(() => {
+  const list = [...postStats.value]
+  const dir = sortDesc.value ? -1 : 1
+  list.sort((a, b) => {
+    if (sortBy.value === 'date') return (a.date < b.date ? 1 : a.date > b.date ? -1 : 0) * dir
+    return (a[sortBy.value] - b[sortBy.value]) * dir
+  })
+  return list
+})
+function setSort(key) {
+  if (sortBy.value === key) {
+    sortDesc.value = !sortDesc.value
+  } else {
+    sortBy.value = key
+    sortDesc.value = true
+  }
+}
+// 切换到统计页时从 GitHub 拉取一次真实评论数
+function refreshComments() {
+  if (commentLoading.value) return
+  commentLoading.value = true
+  commentSync.value = '正在同步评论数据…'
+  fetchCommentStats(getGhToken())
+    .then((stats) => {
+      const n = Object.keys(stats).length
+      commentSync.value = `已同步 ${n} 篇讨论的评论数（${new Date().toLocaleString()}）`
+    })
+    .catch((e) => {
+      commentSync.value = `评论同步失败：${e.message}（可使用缓存数据）`
+    })
+    .finally(() => {
+      commentLoading.value = false
+    })
+}
 
 const router = useRouter()
 
+// 切换到数据统计页时拉取线上评论数
+watch(activeTab, (tab) => {
+  if (tab === 'stats') refreshComments()
+})
+
 // ---------- 通用 ----------
 const activeTab = ref('posts')
+
+// 切换到数据统计页时拉取线上评论数
+watch(activeTab, (tab) => {
+  if (tab === 'stats') refreshComments()
+})
 const toast = reactive({ show: false, text: '', kind: 'ok' })
 let toastTimer = null
 function notify(text, kind = 'ok') {
@@ -213,7 +275,11 @@ const postFilter = ref('all') // 'all' | 'published' | 'draft'
 const publishedCount = computed(() => store.posts.filter((p) => p.published !== false).length)
 const draftCount = computed(() => store.posts.filter((p) => p.published === false).length)
 const postList = computed(() => {
-  let list = [...store.posts].sort((a, b) => (a.date < b.date ? 1 : -1))
+  let list = [...store.posts].sort((a, b) => {
+    if (a.pinned && !b.pinned) return -1
+    if (!a.pinned && b.pinned) return 1
+    return a.date < b.date ? 1 : -1
+  })
   if (postFilter.value === 'published') {
     list = list.filter((p) => p.published !== false)
   } else if (postFilter.value === 'draft') {
@@ -238,6 +304,21 @@ async function togglePostPublished(p) {
     notify(newVal ? '已发布到线上，前台可见' : '已保存为草稿并同步到线上，仅后台可见')
   } else {
     notify('本机状态已更新，但同步线上失败，请检查「发布设置」后重试', 'err')
+  }
+}
+
+async function togglePostPinned(p) {
+  const idx = store.posts.findIndex((x) => x.id === p.id)
+  if (idx < 0) return
+  const newVal = !p.pinned
+  store.posts[idx].pinned = newVal
+  persistPosts()
+  notify(newVal ? '已设为置顶' : '已取消置顶')
+  const ok = await publishAll()
+  if (ok) {
+    store.remoteUpdatedAt = new Date().toISOString()
+  } else {
+    notify('本机状态已更新，但同步线上失败', 'err')
   }
 }
 
@@ -282,6 +363,8 @@ const form = reactive({
   id: '',
   date: '',
   category: '',
+  series: '',
+  seriesOrder: 1,
   summary: '',
   contentText: '',
   published: true
@@ -295,8 +378,10 @@ function fillForm() {
   form.id = editing.value.id
   form.date = editing.value.date
   form.category = editing.value.category
+  form.series = editing.value.series || ''
+  form.seriesOrder = editing.value.seriesOrder || 1
   form.summary = editing.value.summary
-// 兼容旧版数组正文：回填编辑器时自动转换为 Markdown 字符串
+  // 兼容旧版数组正文：回填编辑器时自动转换为 Markdown 字符串
   form.contentText = Array.isArray(editing.value.content)
     ? legacyBlocksToMarkdown(editing.value.content)
     : (editing.value.content || '')
@@ -326,6 +411,8 @@ const postData = {
     title,
     date: form.date,
     category: form.category.trim(),
+    series: form.series.trim() || undefined,
+    seriesOrder: form.series.trim() ? (parseInt(form.seriesOrder) || 1) : undefined,
     tags,
     summary: form.summary.trim(),
     content,
@@ -461,6 +548,15 @@ loadRemote().then(() => {
         >
           <span class="quick-icon">&#128202;</span>
           <span class="quick-label">数据工具</span>
+        </button>
+        <button
+          type="button"
+          class="quick-card"
+          :class="{ active: activeTab === 'stats' }"
+          @click="activeTab = 'stats'"
+        >
+          <span class="quick-icon">&#128200;</span>
+          <span class="quick-label">数据统计</span>
         </button>
         <button
           type="button"
@@ -651,6 +747,7 @@ loadRemote().then(() => {
                 <td>
                   <span v-if="p.published === false" class="admin-post-title draft-title">{{ p.title }}</span>
                   <router-link v-else :to="`/post/${p.id}`" class="admin-post-title">{{ p.title }}</router-link>
+                  <span v-if="p.pinned" class="admin-pin-badge">置顶</span>
                 </td>
                 <td>{{ p.category }}</td>
                 <td>{{ p.date }}</td>
@@ -665,6 +762,9 @@ loadRemote().then(() => {
                   >{{ p.published === false ? '草稿' : '已发布' }}</button>
                 </td>
                 <td class="col-ops">
+                  <button type="button" class="admin-mini-btn" :class="{ pin: p.pinned }" @click="togglePostPinned(p)">
+                    {{ p.pinned ? '取消置顶' : '置顶' }}
+                  </button>
                   <button type="button" class="admin-mini-btn" @click="editPost(p)">编辑</button>
                   <button type="button" class="admin-mini-btn danger" @click="deletePost(p)">删除</button>
                 </td>
@@ -695,6 +795,14 @@ loadRemote().then(() => {
             <label class="admin-field">
               <span>分类 *</span>
               <input v-model.trim="form.category" class="admin-input" placeholder="如 技术笔记" />
+            </label>
+            <label class="admin-field">
+              <span>系列/连载</span>
+              <input v-model.trim="form.series" class="admin-input" placeholder="如 Vue3源码解读（留空则不加入任何系列）" />
+            </label>
+            <label class="admin-field" v-if="form.series.trim()">
+              <span>系列顺序</span>
+              <input v-model.number="form.seriesOrder" class="admin-input" type="number" min="1" placeholder="如 1、2、3..." />
             </label>
             <label class="admin-field">
               <span>标签（逗号分隔）</span>
@@ -782,6 +890,103 @@ loadRemote().then(() => {
             <code>content.json</code> 并自动部署，<b>所有访客约 1-2 分钟内可见</b>；
             访客页面每分钟自动检查更新。发布依赖 GitHub 令牌，请到「发布设置」中配置。
           </p>
+        </div>
+      </section>
+
+      <!-- 数据统计 -->
+      <section v-if="activeTab === 'stats'" class="admin-section">
+        <h2 class="admin-section-title">数据统计</h2>
+        <p class="admin-section-desc">
+          查看各文章的访问、点赞、分享、评论数据。
+          访问/点赞/分享记录于本机浏览器（localStorage），评论数为 GitHub Discussions 线上真实数据。
+        </p>
+        <p class="admin-section-desc" style="margin-top: 6px">
+          <span :class="commentLoading ? 'stats-syncing' : ''">{{ commentSync || '点击「同步评论」从 GitHub 拉取最新评论数' }}</span>
+          <button type="button" class="admin-mini-btn" :disabled="commentLoading" style="margin-left: 10px" @click="refreshComments">
+            {{ commentLoading ? '同步中…' : '🔄 同步评论' }}
+          </button>
+        </p>
+
+        <!-- 总览卡片 -->
+        <div class="admin-grid four">
+          <div class="admin-card stat-card">
+            <div class="stat-icon">👁️</div>
+            <div class="stat-value">{{ totalStats.totalViews }}</div>
+            <div class="stat-label">总访问</div>
+          </div>
+          <div class="admin-card stat-card">
+            <div class="stat-icon">❤️</div>
+            <div class="stat-value">{{ totalStats.totalLikes }}</div>
+            <div class="stat-label">总点赞</div>
+          </div>
+          <div class="admin-card stat-card">
+            <div class="stat-icon">📤</div>
+            <div class="stat-value">{{ totalStats.totalShares }}</div>
+            <div class="stat-label">总分享</div>
+          </div>
+          <div class="admin-card stat-card">
+            <div class="stat-icon">💬</div>
+            <div class="stat-value">{{ totalStats.totalComments }}</div>
+            <div class="stat-label">总评论</div>
+          </div>
+        </div>
+
+        <!-- 排序控制 -->
+        <div class="admin-card">
+          <div class="admin-row stats-toolbar">
+            <span class="admin-section-desc" style="margin:0">排序：</span>
+            <button
+              v-for="col in sortColumns"
+              :key="col.key"
+              class="admin-filter-btn"
+              :class="{ active: sortBy === col.key }"
+              type="button"
+              @click="setSort(col.key)"
+            >
+              {{ col.label }} {{ sortBy === col.key ? (sortDesc ? '↓' : '↑') : '' }}
+            </button>
+          </div>
+        </div>
+
+        <!-- 文章统计表格 -->
+        <div class="admin-card">
+          <div class="admin-table-wrap">
+            <table class="admin-table stats-table">
+              <thead>
+                <tr>
+                  <th>文章标题</th>
+                  <th>分类</th>
+                  <th>状态</th>
+                  <th class="num-col">👁️ 访问</th>
+                  <th class="num-col">❤️ 点赞</th>
+                  <th class="num-col">📤 分享</th>
+                  <th class="num-col">💬 评论</th>
+                  <th class="num-col">📊 总分</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="s in sortedStats" :key="s.id">
+                  <td>
+                    <router-link :to="`/post/${s.id}`" target="_blank" class="stats-link">{{ s.title }}</router-link>
+                  </td>
+                  <td>{{ s.category }}</td>
+                  <td>
+                    <span class="status-badge" :class="s.published ? 'published' : 'draft'">
+                      {{ s.published ? '已发布' : '草稿' }}
+                    </span>
+                  </td>
+                  <td class="num-col">{{ s.views }}</td>
+                  <td class="num-col">{{ s.likes }}</td>
+                  <td class="num-col">{{ s.shares }}</td>
+                  <td class="num-col">{{ s.comments }}</td>
+                  <td class="num-col stat-total">{{ s.total }}</td>
+                </tr>
+                <tr v-if="!postStats.length">
+                  <td colspan="8" class="admin-empty">暂无统计数据，访问文章后将自动记录。</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </section>
 
