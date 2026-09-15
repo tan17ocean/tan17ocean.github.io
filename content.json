@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-15T00:55:44.668Z",
+  "updatedAt": "2026-09-15T00:55:49.068Z",
   "profile": {
     "name": "tan17ocean",
     "heroSubtitles": [
@@ -315,7 +315,7 @@
         "## 沉淀",
         "事后我把这次排查写成团队文档，并给监控补充了缓存命中率指标。一次线上问题，如果能变成一条预防规则，就算没白踩这个坑。"
       ],
-      "pinned": true
+      "pinned": false
     },
     {
       "id": "markdown-upgrade-note",
