@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-14T03:46:04.647Z",
+  "updatedAt": "2026-09-15T00:38:44.620Z",
   "profile": {
     "name": "tan17ocean",
     "heroSubtitles": [
@@ -312,7 +312,8 @@
         "- 增加 DB 侧连接池保护与慢查询告警",
         "## 沉淀",
         "事后我把这次排查写成团队文档，并给监控补充了缓存命中率指标。一次线上问题，如果能变成一条预防规则，就算没白踩这个坑。"
-      ]
+      ],
+      "pinned": true
     },
     {
       "id": "markdown-upgrade-note",
